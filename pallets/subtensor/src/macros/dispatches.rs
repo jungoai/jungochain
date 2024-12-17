@@ -299,13 +299,12 @@ mod dispatches {
 		.saturating_add(T::DbWeight::get().writes(2)), DispatchClass::Normal, Pays::No))]
         pub fn set_root_weights(
             origin: OriginFor<T>,
-            netuid: u16,
             hotkey: T::AccountId,
             dests: Vec<u16>,
             weights: Vec<u16>,
             version_key: u64,
         ) -> DispatchResult {
-            Self::do_set_root_weights(origin, netuid, hotkey, dests, weights, version_key)
+            Self::do_set_root_weights(origin, hotkey, dests, weights, version_key)
         }
 
         /// --- Sets the key as a delegate.

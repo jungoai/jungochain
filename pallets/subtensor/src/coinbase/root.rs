@@ -291,46 +291,47 @@ impl<T: Config> Pallet<T> {
     /// 'j' with according to the preferences of key. Validator 'i' within the root network.
     ///
     pub fn get_root_weights() -> Vec<Vec<I64F64>> {
-        // --- 0. The number of validators on the root network.
-        let n: usize = Self::get_num_root_validators() as usize;
+        // --- 0. The number of senate members
+        let senate_count: usize = T::SenateMembers::all_members().len();
 
         // --- 1 The number of subnets to validate.
         log::debug!("subnet size before cast: {:?}", Self::get_num_subnets());
-        let k: usize = Self::get_num_subnets() as usize;
-        log::debug!("n: {:?} k: {:?}", n, k);
+
+        // subnet_count
+        let sn_count: usize = Self::get_num_subnets() as usize;
+
+        log::debug!("senate_count: {:?} sn_count: {:?}", senate_count, sn_count);
 
         // --- 2. Initialize a 2D vector with zeros to store the weights. The dimensions are determined
-        // by `n` (number of validators) and `k` (total number of subnets).
-        let mut weights: Vec<Vec<I64F64>> = vec![vec![I64F64::from_num(0.0); k]; n];
-        log::debug!("weights:\n{:?}\n", weights);
+        let mut wss: Vec<Vec<I64F64>> = vec![vec![I64F64::from_num(0.0); sn_count]; senate_count];
+
+        log::debug!("weights:\n{:?}\n", wss);
 
         let subnet_list = Self::get_all_subnet_netuids();
 
+        let subnet_weights = <Weights<T> as IterableStorageDoubleMap<
+            Netuid,
+            Uid,
+            Vec<(Uid, ItemWeight)>,
+        >>::iter_prefix(Self::get_root_netuid());
+
         // --- 3. Iterate over stored weights and fill the matrix.
-        for (uid_i, weights_i) in
-            <Weights<T> as IterableStorageDoubleMap<u16, u16, Vec<(u16, u16)>>>::iter_prefix(
-                Self::get_root_netuid(),
-            )
-        {
-            // --- 4. Iterate over each weight entry in `weights_i` to update the corresponding value in the
-            // initialized `weights` 2D vector. Here, `uid_j` represents a subnet, and `weight_ij` is the
-            // weight of `uid_i` with respect to `uid_j`.
-            for (netuid, weight_ij) in &weights_i {
-                let idx = uid_i as usize;
-                if let Some(weight) = weights.get_mut(idx) {
-                    if let Some((w, _)) = weight
+        for (senate_uid, weights) in subnet_weights {
+            for (netuid, weight) in &weights {
+                if let Some(ws) = wss.get_mut(senate_uid as usize) {
+                    if let Some((w, _)) = ws
                         .iter_mut()
                         .zip(&subnet_list)
                         .find(|(_, subnet)| *subnet == netuid)
                     {
-                        *w = I64F64::from_num(*weight_ij);
+                        *w = I64F64::from_num(*weight);
                     }
                 }
             }
         }
 
         // --- 5. Return the filled weights matrix.
-        weights
+        wss
     }
 
     /// Sets the network rate limit and emit the `NetworkRateLimitSet` event
@@ -377,11 +378,11 @@ impl<T: Config> Pallet<T> {
         }
 
         // --- 2. Retrieves the number of root validators on subnets.
-        let n: u16 = Self::get_num_root_validators();
-        log::debug!("n:\n{:?}\n", n);
-        if n == 0 {
+        let senate_count: u16 = T::SenateMembers::all_members().len() as u16;
+        log::debug!("n:\n{:?}\n", senate_count);
+        if senate_count == 0 {
             // No validators.
-            return Err("No validators to validate emission values.");
+            return Err("No Senate to validate emission values.");
         }
 
         // --- 3. Obtains the number of registered subnets.
@@ -409,10 +410,11 @@ impl<T: Config> Pallet<T> {
 
         // --- 6. Retrieves and stores the stake value associated with each hotkey on the root network.
         // Stakes are stored in a 64-bit fixed point representation for precise calculations.
-        let mut stake_i64: Vec<I64F64> = vec![I64F64::from_num(0.0); n as usize];
-        for ((_, hotkey), stake) in hotkeys.iter().zip(&mut stake_i64) {
-            *stake = I64F64::from_num(Self::get_total_stake_for_hotkey(hotkey));
-        }
+        // For senate the weight subnets, all stakes would be set to 1
+        let mut stake_i64: Vec<I64F64> = vec![I64F64::from_num(1.0); senate_count as usize];
+
+        // TODO: currently it's not usable, but it's usefull after stake-base weighting added
+        // remove this comment if stake-base weighting added
         inplace_normalize_64(&mut stake_i64);
         log::debug!("S:\n{:?}\n", &stake_i64);
 
@@ -687,7 +689,7 @@ impl<T: Config> Pallet<T> {
             // Check if the hotkey is *now* a member of the Senate.
             // Otherwise, error out.
             ensure!(
-                T::SenateMembers::is_member(&hotkey),
+                T::SenateMembers::is_delegate_member(&hotkey),
                 Error::<T>::StakeTooLowForRoot, // Had less stake than the lowest stake incumbent.
             );
         }
@@ -736,9 +738,9 @@ impl<T: Config> Pallet<T> {
 
         // Add the hotkey to the Senate.
         // If we're full, we'll swap out the lowest stake member.
-        let members = T::SenateMembers::members();
+        let members = T::SenateMembers::delegate_members();
         let last: Option<&T::AccountId> = None;
-        if (members.len() as u32) == T::SenateMembers::max_members() {
+        if (members.len() as u32) == T::SenateMembers::max_delegate_members() {
             let mut sorted_members = members.clone();
             sorted_members.sort_by(|a, b| {
                 let a_stake = Self::get_total_stake_for_hotkey(a);
@@ -752,12 +754,13 @@ impl<T: Config> Pallet<T> {
 
                 if last_stake < current_stake {
                     // Swap the member with the lowest stake.
-                    T::SenateMembers::swap_member(last, hotkey)
+                    T::SenateMembers::swap_delegate_member(last, hotkey)
                         .map_err(|_| Error::<T>::CouldNotJoinSenate)?;
                 }
             }
         } else {
-            T::SenateMembers::add_member(hotkey).map_err(|_| Error::<T>::CouldNotJoinSenate)?;
+            T::SenateMembers::add_delegate_member(hotkey)
+                .map_err(|_| Error::<T>::CouldNotJoinSenate)?;
         }
 
         // Return the swapped out member, if any.
@@ -766,18 +769,18 @@ impl<T: Config> Pallet<T> {
 
     pub fn do_set_root_weights(
         origin: T::RuntimeOrigin,
-        netuid: u16,
         hotkey: T::AccountId,
         uids: Vec<u16>,
         values: Vec<u16>,
         version_key: u64,
     ) -> dispatch::DispatchResult {
+        let rootid = Self::get_root_netuid();
+
         // Check the caller's signature. This is the coldkey of a registered account.
         let coldkey = ensure_signed(origin)?;
         log::debug!(
-            "do_set_root_weights( origin:{:?} netuid:{:?}, uids:{:?}, values:{:?})",
+            "do_set_root_weights( origin:{:?}, uids:{:?}, values:{:?})",
             coldkey,
-            netuid,
             uids,
             values
         );
@@ -796,12 +799,9 @@ impl<T: Config> Pallet<T> {
 
         // Check to see if this is a valid network.
         ensure!(
-            Self::if_subnet_exist(netuid),
+            Self::if_subnet_exist(rootid),
             Error::<T>::SubNetworkDoesNotExist
         );
-
-        // Check that this is the root network.
-        ensure!(netuid == Self::get_root_netuid(), Error::<T>::NotRootSubnet);
 
         // Check that the length of uid list and value list are equal for this network.
         ensure!(
@@ -818,29 +818,29 @@ impl<T: Config> Pallet<T> {
 
         // Check to see if the hotkey is registered to the passed network.
         ensure!(
-            Self::is_hotkey_registered_on_network(netuid, &hotkey),
+            Self::is_hotkey_registered_on_network(rootid, &hotkey),
             Error::<T>::HotKeyNotRegisteredInSubNet
         );
 
-        // Check to see if the hotkey has enough stake to set weights.
+        // Ensure that the calling hotkey is a member of the senate.
         ensure!(
-            Self::get_total_stake_for_hotkey(&hotkey) >= Self::get_weights_min_stake(),
-            Error::<T>::NotEnoughStakeToSetWeights
+            T::SenateMembers::is_member(&hotkey),
+            Error::<T>::NotSenateMember
         );
 
         // Ensure version_key is up-to-date.
         ensure!(
-            Self::check_version_key(netuid, version_key),
+            Self::check_version_key(rootid, version_key),
             Error::<T>::IncorrectWeightVersionKey
         );
 
         // Get the neuron uid of associated hotkey on network netuid.
-        let neuron_uid = Self::get_uid_for_net_and_hotkey(netuid, &hotkey)?;
+        let neuron_uid = Self::get_uid_for_net_and_hotkey(rootid, &hotkey)?;
 
         // Ensure the uid is not setting weights faster than the weights_set_rate_limit.
         let current_block: u64 = Self::get_current_block_as_u64();
         ensure!(
-            Self::check_rate_limit(netuid, neuron_uid, current_block),
+            Self::check_rate_limit(rootid, neuron_uid, current_block),
             Error::<T>::SettingWeightsTooFast
         );
 
@@ -849,7 +849,7 @@ impl<T: Config> Pallet<T> {
 
         // Ensure that the weights have the required length.
         ensure!(
-            Self::check_length(netuid, neuron_uid, &uids, &values),
+            Self::check_length(rootid, neuron_uid, &uids, &values),
             Error::<T>::WeightVecLengthIsLow
         );
 
@@ -858,7 +858,7 @@ impl<T: Config> Pallet<T> {
 
         // Ensure the weights are max weight limited
         ensure!(
-            Self::max_weight_limited(netuid, neuron_uid, &uids, &max_upscaled_weights),
+            Self::max_weight_limited(rootid, neuron_uid, &uids, &max_upscaled_weights),
             Error::<T>::MaxWeightExceeded
         );
 
@@ -869,18 +869,18 @@ impl<T: Config> Pallet<T> {
         }
 
         // Set weights under netuid, uid double map entry.
-        Weights::<T>::insert(netuid, neuron_uid, zipped_weights);
+        Weights::<T>::insert(rootid, neuron_uid, zipped_weights);
 
         // Set the activity for the weights on this network.
-        Self::set_last_update_for_uid(netuid, neuron_uid, current_block);
+        Self::set_last_update_for_uid(rootid, neuron_uid, current_block);
 
         // Emit the tracking event.
         log::debug!(
             "RootWeightsSet( netuid:{:?}, neuron_uid:{:?} )",
-            netuid,
+            rootid,
             neuron_uid
         );
-        Self::deposit_event(Event::WeightsSet(netuid, neuron_uid));
+        Self::deposit_event(Event::WeightsSet(rootid, neuron_uid));
 
         // Return ok.
         Ok(())
@@ -913,7 +913,7 @@ impl<T: Config> Pallet<T> {
             T::TriumvirateInterface::add_vote(hotkey, proposal, index, approve)?;
 
         // --- 5. Calculate extrinsic weight
-        let members = T::SenateMembers::members();
+        let members = T::SenateMembers::all_members();
         let member_count = members.len() as u32;
         let vote_weight = Weight::from_parts(20_528_275, 4980)
             .saturating_add(Weight::from_parts(48_856, 0).saturating_mul(member_count.into()))

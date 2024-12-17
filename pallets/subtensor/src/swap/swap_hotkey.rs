@@ -193,8 +193,8 @@ impl<T: Config> Pallet<T> {
 
         // 7. Swap Senate members.
         // Senate( hotkey ) --> ?
-        if T::SenateMembers::is_member(old_hotkey) {
-            T::SenateMembers::swap_member(old_hotkey, new_hotkey).map_err(|e| e.error)?;
+        if T::SenateMembers::is_delegate_member(old_hotkey) {
+            T::SenateMembers::swap_delegate_member(old_hotkey, new_hotkey).map_err(|e| e.error)?;
             weight.saturating_accrue(T::DbWeight::get().reads_writes(1, 2));
         }
 
@@ -400,8 +400,8 @@ impl<T: Config> Pallet<T> {
         weight: &mut Weight,
     ) -> DispatchResult {
         weight.saturating_accrue(T::DbWeight::get().reads(1));
-        if T::SenateMembers::is_member(old_hotkey) {
-            T::SenateMembers::swap_member(old_hotkey, new_hotkey).map_err(|e| e.error)?;
+        if T::SenateMembers::is_delegate_member(old_hotkey) {
+            T::SenateMembers::swap_delegate_member(old_hotkey, new_hotkey).map_err(|e| e.error)?;
             weight.saturating_accrue(T::DbWeight::get().reads_writes(1, 2));
         }
         Ok(())

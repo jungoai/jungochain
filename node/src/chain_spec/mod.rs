@@ -44,6 +44,10 @@ pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Pu
 
 type AccountPublic = <Signature as Verify>::Signer;
 
+pub fn sr25519_account(seed: &str) -> AccountId {
+    get_account_id_from_seed::<sr25519::Public>(seed)
+}
+
 /// Generate an account ID from seed.
 pub fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId
 where

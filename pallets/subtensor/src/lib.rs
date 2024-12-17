@@ -51,7 +51,6 @@ use macros::{config, dispatches, errors, events, genesis, hooks};
 // apparently this is stabilized since rust 1.36
 extern crate alloc;
 
-#[deny(missing_docs)]
 #[import_section(errors::errors)]
 #[import_section(events::events)]
 #[import_section(dispatches::dispatches)]
@@ -1206,15 +1205,21 @@ pub mod pallet {
     /// --- DMAP ( netuid ) --> validator_permit
     pub type ValidatorPermit<T: Config> =
         StorageMap<_, Identity, u16, Vec<bool>, ValueQuery, EmptyBoolVec<T>>;
+
+    pub type Uid = u16;
+    pub type Netuid = Uid;
+    pub type SenateUid = Uid;
+    pub type ItemWeight = u16;
+
     #[pallet::storage]
     /// --- DMAP ( netuid, uid ) --> weights
     pub type Weights<T: Config> = StorageDoubleMap<
         _,
         Identity,
-        u16,
+        Netuid,
         Identity,
-        u16,
-        Vec<(u16, u16)>,
+        Uid,
+        Vec<(Uid, ItemWeight)>,
         ValueQuery,
         DefaultWeights<T>,
     >;
@@ -1540,9 +1545,10 @@ where
                     Err(InvalidTransaction::Custom(3).into())
                 }
             }
-            Some(Call::set_root_weights { netuid, hotkey, .. }) => {
-                if Self::check_weights_min_stake(hotkey, *netuid) {
-                    let priority: u64 = Self::get_priority_set_weights(hotkey, *netuid);
+            Some(Call::set_root_weights { hotkey, .. }) => {
+                let netuid = Pallet::<T>::get_root_netuid();
+                if Self::check_weights_min_stake(hotkey, netuid) {
+                    let priority: u64 = Self::get_priority_set_weights(hotkey, netuid);
                     Ok(ValidTransaction {
                         priority,
                         longevity: 1,
@@ -1703,53 +1709,59 @@ use sp_std::vec::Vec;
 use subtensor_macros::freeze_struct;
 
 /// Trait for managing a membership pallet instance in the runtime
-pub trait MemberManagement<AccountId> {
+pub trait MemberManagement<AccountId: Clone + PartialEq> {
     /// Add member
-    fn add_member(account: &AccountId) -> DispatchResultWithPostInfo;
-
+    fn add_delegate_member(account: &AccountId) -> DispatchResultWithPostInfo;
     /// Remove a member
-    fn remove_member(account: &AccountId) -> DispatchResultWithPostInfo;
-
+    fn remove_delegate_member(account: &AccountId) -> DispatchResultWithPostInfo;
     /// Swap member
-    fn swap_member(remove: &AccountId, add: &AccountId) -> DispatchResultWithPostInfo;
-
+    fn swap_delegate_member(remove: &AccountId, add: &AccountId) -> DispatchResultWithPostInfo;
+    /// Get Delegate members
+    fn delegate_members() -> Vec<AccountId>;
+    /// Get Expert members
+    fn expert_members() -> Vec<AccountId>;
     /// Get all members
-    fn members() -> Vec<AccountId>;
-
+    fn all_members() -> Vec<AccountId> {
+        [Self::delegate_members(), Self::expert_members()].concat()
+    }
+    /// Check if an account is apart of the delegate set
+    fn is_delegate_member(account: &AccountId) -> bool {
+        Self::delegate_members().contains(account)
+    }
+    /// Check if an account is apart of the expert set
+    fn is_expert_member(account: &AccountId) -> bool {
+        Self::expert_members().contains(account)
+    }
     /// Check if an account is apart of the set
-    fn is_member(account: &AccountId) -> bool;
-
+    fn is_member(account: &AccountId) -> bool {
+        Self::is_delegate_member(account) || Self::is_expert_member(account)
+    }
     /// Get our maximum member count
-    fn max_members() -> u32;
+    fn max_delegate_members() -> u32;
+    /// Get our maximum member count
+    fn max_expert_members() -> u32;
 }
 
-impl<T> MemberManagement<T> for () {
-    /// Add member
-    fn add_member(_: &T) -> DispatchResultWithPostInfo {
+impl<T: Clone + PartialEq> MemberManagement<T> for () {
+    fn add_delegate_member(_: &T) -> DispatchResultWithPostInfo {
         Ok(().into())
     }
-
-    // Remove a member
-    fn remove_member(_: &T) -> DispatchResultWithPostInfo {
+    fn remove_delegate_member(_: &T) -> DispatchResultWithPostInfo {
         Ok(().into())
     }
-
-    // Swap member
-    fn swap_member(_: &T, _: &T) -> DispatchResultWithPostInfo {
+    fn swap_delegate_member(_: &T, _: &T) -> DispatchResultWithPostInfo {
         Ok(().into())
     }
-
-    // Get all members
-    fn members() -> Vec<T> {
+    fn delegate_members() -> Vec<T> {
         vec![]
     }
-
-    // Check if an account is apart of the set
-    fn is_member(_: &T) -> bool {
-        false
+    fn expert_members() -> Vec<T> {
+        vec![]
     }
-
-    fn max_members() -> u32 {
+    fn max_delegate_members() -> u32 {
+        0
+    }
+    fn max_expert_members() -> u32 {
         0
     }
 }

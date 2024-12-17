@@ -216,5 +216,8 @@ mod config {
         /// Dissolve network schedule duration
         #[pallet::constant]
         type InitialDissolveNetworkScheduleDuration: Get<BlockNumberFor<Self>>;
+        /// Root subnet Tempo
+        #[pallet::constant]
+        type RootTempo: Get<u16>;
     }
 }

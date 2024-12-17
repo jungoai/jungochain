@@ -150,8 +150,8 @@ mod genesis {
             // Set the max weight limit to infitiy, no weight restrictions.
             MaxWeightsLimit::<T>::insert(root_netuid, u16::MAX);
 
-            // Add default root tempo.
-            Tempo::<T>::insert(root_netuid, 100);
+            // Set root tempo
+            Tempo::<T>::insert(root_netuid, T::RootTempo::get());
 
             // Set the root network as open.
             NetworkRegistrationAllowed::<T>::insert(root_netuid, true);

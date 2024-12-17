@@ -3,33 +3,32 @@
 
 use super::*;
 
+#[rustfmt::skip]
 pub fn localnet_config(single_authority: bool) -> Result<ChainSpec, String> {
     let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
-
-    // Give front-ends necessary data to present to users
-    let mut properties = sc_service::Properties::new();
-    properties.insert("tokenSymbol".into(), "TAO".into());
-    properties.insert("tokenDecimals".into(), 9.into());
-    properties.insert("ss58Format".into(), 42.into());
 
     Ok(ChainSpec::builder(
         wasm_binary,
         Extensions {
-            bad_blocks: Some(HashSet::from_iter(vec![
-                // Example bad block
-                H256::from_str(
-                    "0xc174d485de4bc3813ac249fe078af605c74ff91d07b0a396cf75fa04f81fa312",
-                )
-                .unwrap(),
-            ])),
+            bad_blocks: Some(HashSet::new()),
             ..Default::default()
         },
     )
-    .with_name("Bittensor")
-    .with_protocol_id("bittensor")
-    .with_id("bittensor")
-    .with_chain_type(ChainType::Development)
-    .with_genesis_config_patch(localnet_genesis(
+    .with_name          ("JangoAI")
+    .with_protocol_id   ("jango-ai")
+    .with_id            ("jango-ai")
+    .with_chain_type    (ChainType::Development)
+    // Give front-ends necessary data to present to users
+    .with_properties({
+        let mut properties = sc_service::Properties::new();
+        properties.insert("tokenSymbol".into()  , "testJango".into());
+        properties.insert("tokenDecimals".into(), 9.into());
+        properties.insert("ss58Format".into()   , 42.into());
+        properties
+    })
+    .with_genesis_config_patch(devnet_genesis(
+        // Sudo account
+        sr25519_account("Alice"),
         // Initial PoA authorities (Validators)
         // aura | grandpa
         if single_authority {
@@ -41,84 +40,64 @@ pub fn localnet_config(single_authority: bool) -> Result<ChainSpec, String> {
                 authority_keys_from_seed("Bob"),
             ]
         },
-        // Pre-funded accounts
-        true,
+        // balances
+        vec![
+            (sr25519_account("Alice")   , 1000_000_000_000_000u128),
+            (sr25519_account("Bob")     , 1000_000_000_000_000u128),
+            (sr25519_account("Charlie") , 1000_000_000_000_000u128),
+            (sr25519_account("Dave")    , 2000_000_000_000u128),
+            (sr25519_account("Ferdie")  , 2000_000_000_000u128),
+            (sr25519_account("Eve")     , 2000_000_000_000u128),
+        ],
+        // trimvirates
+        vec![
+            sr25519_account("Alice"),
+            sr25519_account("Bob"),
+            sr25519_account("Charlie"),
+        ],
+        // expert_senate
+        vec![
+            sr25519_account("Dave"),
+            sr25519_account("Ferdie"),
+            sr25519_account("Eve"),
+            AccountId32::from_str("5EHmyyPc69VEfVnaMABtHhxdFgkqLakTHxAVGt1eQ1iQ2MEo").unwrap(),
+        ],
+        vec![],
+        0,
     ))
-    .with_properties(properties)
     .build())
 }
 
-fn localnet_genesis(
-    initial_authorities: Vec<(AuraId, GrandpaId)>,
-    _enable_println: bool,
+#[allow(clippy::too_many_arguments)]
+fn devnet_genesis(
+    sudo_key: AccountId,
+    authorities: Vec<(AuraId, GrandpaId)>,
+    balances: Vec<(AccountId, u128)>,
+    trimvirates: Vec<AccountId>,
+    expert_senate: Vec<AccountId>,
+    _stakes: Vec<(AccountId, Vec<(AccountId, (u64, u16))>)>,
+    _balances_issuance: u64,
 ) -> serde_json::Value {
-    let mut balances = vec![
-        (
-            get_account_id_from_seed::<sr25519::Public>("Alice"),
-            1000000000000000u128,
-        ),
-        (
-            get_account_id_from_seed::<sr25519::Public>("Bob"),
-            1000000000000000u128,
-        ),
-        (
-            get_account_id_from_seed::<sr25519::Public>("Charlie"),
-            1000000000000000u128,
-        ),
-        (
-            get_account_id_from_seed::<sr25519::Public>("Dave"),
-            2000000000000u128,
-        ),
-        (
-            get_account_id_from_seed::<sr25519::Public>("Eve"),
-            2000000000000u128,
-        ),
-        (
-            get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-            2000000000000u128,
-        ),
-    ];
-
-    // Check if the environment variable is set
-    if let Ok(bt_wallet) = env::var("BT_DEFAULT_TOKEN_WALLET") {
-        if let Ok(decoded_wallet) = Ss58Codec::from_ss58check(&bt_wallet) {
-            balances.push((decoded_wallet, 1_000_000_000_000_000u128));
-        } else {
-            eprintln!("Invalid format for BT_DEFAULT_TOKEN_WALLET.");
-        }
-    }
-
-    let trimvirate_members: Vec<AccountId> = bounded_vec![
-        get_account_id_from_seed::<sr25519::Public>("Alice"),
-        get_account_id_from_seed::<sr25519::Public>("Bob"),
-        get_account_id_from_seed::<sr25519::Public>("Charlie"),
-    ];
-
-    let senate_members: Vec<AccountId> = bounded_vec![
-        get_account_id_from_seed::<sr25519::Public>("Dave"),
-        get_account_id_from_seed::<sr25519::Public>("Eve"),
-        get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-    ];
+    let (auras, grandpas): (Vec<AuraId>, Vec<GrandpaId>) = authorities.into_iter().unzip();
 
     serde_json::json!({
-        "balances": { "balances": balances },
+        "balances": {
+            "balances": balances,
+        },
         "aura": {
-            "authorities": initial_authorities.iter().map(|x| (x.0.clone())).collect::<Vec<_>>()
+            "authorities": auras,
         },
         "grandpa": {
-            "authorities": initial_authorities
-                .iter()
-                .map(|x| (x.1.clone(), 1))
-                .collect::<Vec<_>>()
+            "authorities": grandpas.into_iter().map(|x| (x, 1)).collect::<Vec<_>>()
         },
         "sudo": {
-            "key": Some(get_account_id_from_seed::<sr25519::Public>("Alice"))
+            "key": Some(sudo_key),
         },
         "triumvirateMembers": {
-            "members": trimvirate_members
+            "members": trimvirates
         },
-        "senateMembers": {
-            "members": senate_members,
-        },
+        "expertSenate": {
+            "members": expert_senate
+        }
     })
 }

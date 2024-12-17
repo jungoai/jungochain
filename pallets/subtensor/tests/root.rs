@@ -33,35 +33,6 @@ fn test_root_register_network_exist() {
     });
 }
 
-// SKIP_WASM_BUILD=1 RUST_LOG=info cargo test --test root -- test_set_weights_not_root_error --exact --nocapture
-#[test]
-fn test_set_weights_not_root_error() {
-    new_test_ext(0).execute_with(|| {
-        let netuid: u16 = 1;
-
-        let dests = vec![0];
-        let weights = vec![1];
-        let version_key: u64 = 0;
-        let hotkey = U256::from(1);
-        let coldkey = U256::from(2);
-
-        add_network(netuid, 0, 0);
-        register_ok_neuron(netuid, hotkey, coldkey, 2143124);
-
-        assert_err!(
-            SubtensorModule::set_root_weights(
-                RuntimeOrigin::signed(coldkey),
-                netuid,
-                hotkey,
-                dests.clone(),
-                weights.clone(),
-                version_key,
-            ),
-            Error::<Test>::NotRootSubnet
-        );
-    });
-}
-
 // SKIP_WASM_BUILD=1 RUST_LOG=info cargo test --test root -- test_root_register_normal_on_root_fails --exact --nocapture
 #[test]
 fn test_root_register_normal_on_root_fails() {
@@ -248,7 +219,6 @@ fn test_root_set_weights() {
             assert_err!(
                 SubtensorModule::set_root_weights(
                     <<Test as Config>::RuntimeOrigin>::signed(hotkey),
-                    root_netuid,
                     hotkey,
                     uids,
                     values,
@@ -267,7 +237,6 @@ fn test_root_set_weights() {
             assert_err!(
                 SubtensorModule::set_root_weights(
                     <<Test as Config>::RuntimeOrigin>::signed(unassociated_coldkey),
-                    root_netuid,
                     hotkey,
                     uids,
                     values,
@@ -285,7 +254,6 @@ fn test_root_set_weights() {
             let values: Vec<u16> = vec![1];
             assert_ok!(SubtensorModule::set_root_weights(
                 <<Test as Config>::RuntimeOrigin>::signed(coldkey),
-                root_netuid,
                 hotkey,
                 uids,
                 values,
@@ -404,7 +372,6 @@ fn test_root_set_weights_out_of_order_netuids() {
             let hotkey = U256::from(i);
             assert_ok!(SubtensorModule::set_root_weights(
                 <<Test as Config>::RuntimeOrigin>::signed(coldkey),
-                root_netuid,
                 hotkey,
                 uids,
                 values,
@@ -584,7 +551,6 @@ fn test_network_pruning() {
             assert!(SubtensorModule::get_uid_for_net_and_hotkey(root_netuid, &hot).is_ok());
             assert_ok!(SubtensorModule::set_root_weights(
                 <<Test as Config>::RuntimeOrigin>::signed(cold),
-                root_netuid,
                 hot,
                 uids,
                 values,
@@ -800,7 +766,6 @@ fn test_weights_after_network_pruning() {
         log::info!("In netuid: {:?}", root_netuid);
         assert_ok!(SubtensorModule::set_root_weights(
             <<Test as Config>::RuntimeOrigin>::signed(cold),
-            root_netuid,
             hot,
             uids,
             values,

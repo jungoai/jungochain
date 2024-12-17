@@ -46,11 +46,9 @@ fn test_set_rootweights_dispatch_info_ok() {
     new_test_ext(0).execute_with(|| {
         let dests = vec![1, 1];
         let weights = vec![1, 1];
-        let netuid: u16 = 1;
         let version_key: u64 = 0;
         let hotkey: U256 = U256::from(1); // Add the hotkey field
         let call = RuntimeCall::SubtensorModule(SubtensorCall::set_root_weights {
-            netuid,
             dests,
             weights,
             version_key,
@@ -80,7 +78,6 @@ fn test_set_rootweights_validate() {
         let who = coldkey; // The coldkey signs this transaction
 
         let call = RuntimeCall::SubtensorModule(SubtensorCall::set_root_weights {
-            netuid,
             dests,
             weights,
             version_key,

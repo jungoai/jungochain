@@ -212,34 +212,45 @@ impl CanVote<AccountId> for CanVoteToTriumvirate {
 use pallet_subtensor::{CollectiveInterface, MemberManagement};
 pub struct ManageSenateMembers;
 impl MemberManagement<AccountId> for ManageSenateMembers {
-    fn add_member(account: &AccountId) -> DispatchResultWithPostInfo {
+    fn add_delegate_member(account: &AccountId) -> DispatchResultWithPostInfo {
         let who = *account;
         SenateMembers::add_member(RawOrigin::Root.into(), who)
     }
 
-    fn remove_member(account: &AccountId) -> DispatchResultWithPostInfo {
+    fn remove_delegate_member(account: &AccountId) -> DispatchResultWithPostInfo {
         let who = *account;
         SenateMembers::remove_member(RawOrigin::Root.into(), who)
     }
 
-    fn swap_member(rm: &AccountId, add: &AccountId) -> DispatchResultWithPostInfo {
+    fn swap_delegate_member(rm: &AccountId, add: &AccountId) -> DispatchResultWithPostInfo {
         let remove = *rm;
         let add = *add;
-
         Triumvirate::remove_votes(rm)?;
         SenateMembers::swap_member(RawOrigin::Root.into(), remove, add)
     }
 
-    fn is_member(account: &AccountId) -> bool {
-        SenateMembers::members().contains(account)
-    }
-
-    fn members() -> Vec<AccountId> {
+    fn delegate_members() -> Vec<AccountId> {
         SenateMembers::members().into()
     }
 
-    fn max_members() -> u32 {
+    fn expert_members() -> Vec<AccountId> {
+        vec![]
+    }
+
+    fn is_delegate_member(account: &AccountId) -> bool {
+        SenateMembers::members().contains(account)
+    }
+
+    fn is_expert_member(account: &AccountId) -> bool {
+        false
+    }
+
+    fn max_delegate_members() -> u32 {
         SenateMaxMembers::get()
+    }
+
+    fn max_expert_members() -> u32 {
+        0
     }
 }
 
