@@ -30,6 +30,7 @@ use pallet_grandpa::{
     fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
 };
 use pallet_registry::CanRegisterIdentity;
+use pallet_subtensor::{CollectiveInterface, MemberManagement};
 use scale_info::TypeInfo;
 use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
@@ -57,7 +58,7 @@ use sp_version::RuntimeVersion;
 pub use frame_support::{
     construct_runtime, parameter_types,
     traits::{
-        ConstBool, ConstU128, ConstU32, ConstU64, ConstU8, FindAuthor, InstanceFilter,
+        ConstBool, ConstU128, ConstU16, ConstU32, ConstU64, ConstU8, FindAuthor, InstanceFilter,
         KeyOwnerProofSystem, OnFinalize, OnTimestampSet, PrivilegeCmp, Randomness, StorageInfo,
     },
     weights::{
@@ -86,6 +87,9 @@ use precompiles::FrontierPrecompiles;
 use fp_rpc::TransactionStatus;
 use pallet_ethereum::{Call::transact, PostLogContent, Transaction as EthereumTransaction};
 use pallet_evm::{Account as EVMAccount, BalanceConverter, FeeCalculator, Runner};
+
+// ----------------------------------------------------------------------------
+// -- Types
 
 // Subtensor module
 pub use pallet_scheduler;
@@ -366,23 +370,22 @@ impl pallet_safe_mode::Config for Runtime {
 // Existential deposit.
 pub const EXISTENTIAL_DEPOSIT: u64 = 500;
 
+#[rustfmt::skip]
 impl pallet_balances::Config for Runtime {
-    type MaxLocks = ConstU32<50>;
-    type MaxReserves = ConstU32<50>;
-    type ReserveIdentifier = [u8; 8];
-    // The type for recording an account's balance.
-    type Balance = Balance;
-    // The ubiquitous event type.
-    type RuntimeEvent = RuntimeEvent;
-    type DustRemoval = ();
-    type ExistentialDeposit = ConstU64<EXISTENTIAL_DEPOSIT>;
-    type AccountStore = System;
-    type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
+    type MaxLocks               = ConstU32<50>;
+    type MaxReserves            = ConstU32<50>;
+    type ReserveIdentifier      = [u8; 8];
+    type Balance                = Balance;
+    type RuntimeEvent           = RuntimeEvent;
+    type DustRemoval            = ();
+    type ExistentialDeposit     = ConstU64<EXISTENTIAL_DEPOSIT>;
+    type AccountStore           = System;
+    type WeightInfo             = pallet_balances::weights::SubstrateWeight<Runtime>;
 
-    type RuntimeHoldReason = RuntimeHoldReason;
-    type RuntimeFreezeReason = RuntimeFreezeReason;
-    type FreezeIdentifier = RuntimeFreezeReason;
-    type MaxFreezes = ConstU32<50>;
+    type RuntimeHoldReason      = RuntimeHoldReason;
+    type RuntimeFreezeReason    = RuntimeFreezeReason;
+    type FreezeIdentifier       = RuntimeFreezeReason;
+    type MaxFreezes             = ConstU32<50>;
 }
 
 pub struct LinearWeightToFee;
@@ -442,18 +445,6 @@ impl pallet_transaction_payment::Config for Runtime {
     type FeeMultiplierUpdate = ConstFeeMultiplier<FeeMultiplier>;
 }
 
-// Configure collective pallet for council
-parameter_types! {
-    pub const CouncilMotionDuration: BlockNumber = 12 * HOURS;
-    pub const CouncilMaxProposals: u32 = 10;
-    pub const CouncilMaxMembers: u32 = 3;
-}
-
-// Configure collective pallet for Senate
-parameter_types! {
-    pub const SenateMaxMembers: u32 = 12;
-}
-
 use pallet_collective::{CanPropose, CanVote, GetVotingMembers};
 pub struct CanProposeToTriumvirate;
 impl CanPropose<AccountId> for CanProposeToTriumvirate {
@@ -462,48 +453,29 @@ impl CanPropose<AccountId> for CanProposeToTriumvirate {
     }
 }
 
-pub struct CanVoteToTriumvirate;
-impl CanVote<AccountId> for CanVoteToTriumvirate {
-    fn can_vote(_: &AccountId) -> bool {
-        //Senate::is_member(account)
-        false // Disable voting from pallet_collective::vote
-    }
+// We call pallet_collective TriumvirateCollective
+type TriumvirateCollective = pallet_collective::Instance1;
+
+#[rustfmt::skip]
+impl pallet_collective::Config<TriumvirateCollective> for Runtime {
+    type RuntimeOrigin 		= RuntimeOrigin;
+    type Proposal 			= RuntimeCall;
+    type RuntimeEvent 		= RuntimeEvent;
+    type MotionDuration 	= CouncilMotionDuration;
+    type MaxProposals 		= CouncilMaxProposals;
+    type MaxMembers 		= GetSenateMemberCount;
+    type DefaultVote 		= pallet_collective::PrimeDefaultVote;
+    type WeightInfo 		= pallet_collective::weights::SubstrateWeight<Runtime>;
+    type SetMembersOrigin 	= EnsureNever<AccountId>;
+    type CanPropose 		= CanProposeToTriumvirate;
+    type CanVote 			= CanVoteToTriumvirate;
+    type GetVotingMembers 	= GetSenateMemberCount;
 }
-
-use pallet_subtensor::{CollectiveInterface, MemberManagement};
-pub struct ManageSenateMembers;
-impl MemberManagement<AccountId> for ManageSenateMembers {
-    fn add_member(account: &AccountId) -> DispatchResultWithPostInfo {
-        let who = Address::Id(account.clone());
-        SenateMembers::add_member(RawOrigin::Root.into(), who)
-    }
-
-    fn remove_member(account: &AccountId) -> DispatchResultWithPostInfo {
-        let who = Address::Id(account.clone());
-        SenateMembers::remove_member(RawOrigin::Root.into(), who)
-    }
-
-    fn swap_member(rm: &AccountId, add: &AccountId) -> DispatchResultWithPostInfo {
-        let remove = Address::Id(rm.clone());
-        let add = Address::Id(add.clone());
-
-        Triumvirate::remove_votes(rm)?;
-        SenateMembers::swap_member(RawOrigin::Root.into(), remove, add)
-    }
-
-    fn is_member(account: &AccountId) -> bool {
-        SenateMembers::members().contains(account)
-    }
-
-    fn members() -> Vec<AccountId> {
-        SenateMembers::members().into()
-    }
-
-    fn max_members() -> u32 {
-        SenateMaxMembers::get()
-    }
+parameter_types! {
+    pub const CouncilMotionDuration	: BlockNumber = 12 * HOURS;
+    pub const CouncilMaxProposals	: u32 = 10;
+    pub const CouncilMaxMembers		: u32 = 3;
 }
-
 pub struct GetSenateMemberCount;
 impl GetVotingMembers<MemberCount> for GetSenateMemberCount {
     fn get_count() -> MemberCount {
@@ -515,73 +487,50 @@ impl Get<MemberCount> for GetSenateMemberCount {
         SenateMaxMembers::get()
     }
 }
-
-pub struct TriumvirateVotes;
-impl CollectiveInterface<AccountId, Hash, u32> for TriumvirateVotes {
-    fn remove_votes(hotkey: &AccountId) -> Result<bool, sp_runtime::DispatchError> {
-        Triumvirate::remove_votes(hotkey)
+pub struct CanVoteToTriumvirate;
+impl CanVote<AccountId> for CanVoteToTriumvirate {
+    fn can_vote(_: &AccountId) -> bool {
+        //Senate::is_member(account)
+        false // Disable voting from pallet_collective::vote
     }
-
-    fn add_vote(
-        hotkey: &AccountId,
-        proposal: Hash,
-        index: u32,
-        approve: bool,
-    ) -> Result<bool, sp_runtime::DispatchError> {
-        Triumvirate::do_vote(hotkey.clone(), proposal, index, approve)
-    }
-}
-
-type EnsureMajoritySenate =
-    pallet_collective::EnsureProportionMoreThan<AccountId, TriumvirateCollective, 1, 2>;
-
-// We call pallet_collective TriumvirateCollective
-type TriumvirateCollective = pallet_collective::Instance1;
-impl pallet_collective::Config<TriumvirateCollective> for Runtime {
-    type RuntimeOrigin = RuntimeOrigin;
-    type Proposal = RuntimeCall;
-    type RuntimeEvent = RuntimeEvent;
-    type MotionDuration = CouncilMotionDuration;
-    type MaxProposals = CouncilMaxProposals;
-    type MaxMembers = GetSenateMemberCount;
-    type DefaultVote = pallet_collective::PrimeDefaultVote;
-    type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
-    type SetMembersOrigin = EnsureNever<AccountId>;
-    type CanPropose = CanProposeToTriumvirate;
-    type CanVote = CanVoteToTriumvirate;
-    type GetVotingMembers = GetSenateMemberCount;
 }
 
 // We call council members Triumvirate
 #[allow(dead_code)]
 type TriumvirateMembership = pallet_membership::Instance1;
+#[rustfmt::skip]
 impl pallet_membership::Config<TriumvirateMembership> for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type AddOrigin = EnsureRoot<AccountId>;
-    type RemoveOrigin = EnsureRoot<AccountId>;
-    type SwapOrigin = EnsureRoot<AccountId>;
-    type ResetOrigin = EnsureRoot<AccountId>;
-    type PrimeOrigin = EnsureRoot<AccountId>;
-    type MembershipInitialized = Triumvirate;
-    type MembershipChanged = Triumvirate;
-    type MaxMembers = CouncilMaxMembers;
-    type WeightInfo = pallet_membership::weights::SubstrateWeight<Runtime>;
+    type RuntimeEvent 			= RuntimeEvent;
+    type AddOrigin 				= EnsureRoot<AccountId>;
+    type RemoveOrigin 			= EnsureRoot<AccountId>;
+    type SwapOrigin 			= EnsureRoot<AccountId>;
+    type ResetOrigin 			= EnsureRoot<AccountId>;
+    type PrimeOrigin 			= EnsureRoot<AccountId>;
+    type MembershipInitialized 	= Triumvirate;
+    type MembershipChanged 		= Triumvirate;
+    type MaxMembers 			= CouncilMaxMembers;
+    type WeightInfo 			= pallet_membership::weights::SubstrateWeight<Runtime>;
 }
 
-// We call our top K delegates membership Senate
+// TODO: what is it (Senate) for ?
+// ~We call our top K delegates membership Senate~ not in JungoAI
 #[allow(dead_code)]
 type SenateMembership = pallet_membership::Instance2;
+#[rustfmt::skip]
 impl pallet_membership::Config<SenateMembership> for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type AddOrigin = EnsureRoot<AccountId>;
-    type RemoveOrigin = EnsureRoot<AccountId>;
-    type SwapOrigin = EnsureRoot<AccountId>;
-    type ResetOrigin = EnsureRoot<AccountId>;
-    type PrimeOrigin = EnsureRoot<AccountId>;
-    type MembershipInitialized = ();
-    type MembershipChanged = ();
-    type MaxMembers = SenateMaxMembers;
-    type WeightInfo = pallet_membership::weights::SubstrateWeight<Runtime>;
+    type RuntimeEvent 			= RuntimeEvent;
+    type AddOrigin 				= EnsureRoot<AccountId>;
+    type RemoveOrigin 			= EnsureRoot<AccountId>;
+    type SwapOrigin 			= EnsureRoot<AccountId>;
+    type ResetOrigin 			= EnsureRoot<AccountId>;
+    type PrimeOrigin 			= EnsureRoot<AccountId>;
+    type MembershipInitialized 	= ();
+    type MembershipChanged 		= ();
+    type MaxMembers 			= SenateMaxMembers;
+    type WeightInfo 			= pallet_membership::weights::SubstrateWeight<Runtime>;
+}
+parameter_types! {
+    pub const SenateMaxMembers: u32 = 12;
 }
 
 impl pallet_sudo::Config for Runtime {
@@ -591,25 +540,25 @@ impl pallet_sudo::Config for Runtime {
     type WeightInfo = pallet_sudo::weights::SubstrateWeight<Runtime>;
 }
 
+#[rustfmt::skip]
+impl pallet_multisig::Config for Runtime {
+    type RuntimeEvent 	= RuntimeEvent;
+    type RuntimeCall 	= RuntimeCall;
+    type Currency 		= Balances;
+    type DepositBase 	= DepositBase;
+    type DepositFactor 	= DepositFactor;
+    type MaxSignatories = MaxSignatories;
+    type WeightInfo 	= pallet_multisig::weights::SubstrateWeight<Runtime>;
+}
 parameter_types! {
     // According to multisig pallet, key and value size be computed as follows:
     // value size is `4 + sizeof((BlockNumber, Balance, AccountId))` bytes
     // key size is `32 + sizeof(AccountId)` bytes.
     // For our case, One storage item; key size is 32+32=64 bytes; value is size 4+4+8+32 bytes = 48 bytes.
-    pub const DepositBase: Balance = deposit(1, 112);
+    pub const DepositBase	: Balance = deposit(1, 112);
     // Additional storage item size of 32 bytes.
-    pub const DepositFactor: Balance = deposit(0, 32);
+    pub const DepositFactor	: Balance = deposit(0, 32);
     pub const MaxSignatories: u32 = 100;
-}
-
-impl pallet_multisig::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type RuntimeCall = RuntimeCall;
-    type Currency = Balances;
-    type DepositBase = DepositBase;
-    type DepositFactor = DepositFactor;
-    type MaxSignatories = MaxSignatories;
-    type WeightInfo = pallet_multisig::weights::SubstrateWeight<Runtime>;
 }
 
 // Proxy Pallet config
@@ -846,8 +795,24 @@ impl pallet_preimage::Config for Runtime {
     >;
 }
 
-pub struct AllowIdentityReg;
+#[rustfmt::skip]
+impl pallet_registry::Config for Runtime {
+    type RuntimeEvent 			= RuntimeEvent;
+    type RuntimeHoldReason 		= RuntimeHoldReason;
+    type Currency 				= Balances;
+    type CanRegister 			= AllowIdentityReg;
+    type WeightInfo 			= pallet_registry::weights::SubstrateWeight<Runtime>;
 
+    type MaxAdditionalFields 	= MaxAdditionalFields;
+    type InitialDeposit 		= InitialDeposit;
+    type FieldDeposit 			= FieldDeposit;
+}
+parameter_types! {
+    pub const MaxAdditionalFields	: u32 = 1;
+    pub const InitialDeposit		: Balance = 100_000_000; // 0.1 TAO
+    pub const FieldDeposit			: Balance = 100_000_000; // 0.1 TAO
+}
+pub struct AllowIdentityReg;
 impl CanRegisterIdentity<AccountId> for AllowIdentityReg {
     #[cfg(not(feature = "runtime-benchmarks"))]
     fn can_register(address: &AccountId, identified: &AccountId) -> bool {
@@ -865,32 +830,24 @@ impl CanRegisterIdentity<AccountId> for AllowIdentityReg {
     }
 }
 
-// Configure registry pallet.
+#[rustfmt::skip]
+impl pallet_commitments::Config for Runtime {
+    type RuntimeEvent 	= RuntimeEvent;
+    type Currency 		= Balances;
+    type WeightInfo 	= pallet_commitments::weights::SubstrateWeight<Runtime>;
+
+    type CanCommit 		= AllowCommitments;
+    type MaxFields 		= MaxCommitFields;
+    type InitialDeposit = CommitmentInitialDeposit;
+    type FieldDeposit 	= CommitmentFieldDeposit;
+    type RateLimit 		= CommitmentRateLimit;
+}
 parameter_types! {
-    pub const MaxAdditionalFields: u32 = 1;
-    pub const InitialDeposit: Balance = 100_000_000; // 0.1 TAO
-    pub const FieldDeposit: Balance = 100_000_000; // 0.1 TAO
+    pub const MaxCommitFields			: u32 = 1;
+    pub const CommitmentInitialDeposit	: Balance = 0; // Free
+    pub const CommitmentFieldDeposit	: Balance = 0; // Free
+    pub const CommitmentRateLimit		: BlockNumber = 100; // Allow commitment every 100 blocks
 }
-
-impl pallet_registry::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type RuntimeHoldReason = RuntimeHoldReason;
-    type Currency = Balances;
-    type CanRegister = AllowIdentityReg;
-    type WeightInfo = pallet_registry::weights::SubstrateWeight<Runtime>;
-
-    type MaxAdditionalFields = MaxAdditionalFields;
-    type InitialDeposit = InitialDeposit;
-    type FieldDeposit = FieldDeposit;
-}
-
-parameter_types! {
-    pub const MaxCommitFields: u32 = 1;
-    pub const CommitmentInitialDeposit: Balance = 0; // Free
-    pub const CommitmentFieldDeposit: Balance = 0; // Free
-    pub const CommitmentRateLimit: BlockNumber = 100; // Allow commitment every 100 blocks
-}
-
 pub struct AllowCommitments;
 impl CanCommit<AccountId> for AllowCommitments {
     #[cfg(not(feature = "runtime-benchmarks"))]
@@ -904,19 +861,131 @@ impl CanCommit<AccountId> for AllowCommitments {
     }
 }
 
-impl pallet_commitments::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type Currency = Balances;
-    type WeightInfo = pallet_commitments::weights::SubstrateWeight<Runtime>;
+#[rustfmt::skip]
+impl pallet_subtensor::Config for Runtime {
+    type RuntimeEvent 							= RuntimeEvent;
+    type RuntimeCall 							= RuntimeCall;
+    type SudoRuntimeCall 						= RuntimeCall;
+    type Currency 								= Balances;
+    type CouncilOrigin 							= EnsureMajoritySenate;
+    type SenateMembers 							= ManageSenateMembers;
+    type TriumvirateInterface 					= TriumvirateVotes;
+    type Scheduler 								= Scheduler;
+    type InitialIssuance 						= SubtensorInitialIssuance;
 
-    type CanCommit = AllowCommitments;
+	// -- Per subnet
+    type InitialRho 							= SubtensorInitialRho;
+    type InitialKappa 							= SubtensorInitialKappa;
+    type InitialBondsMovingAverage 				= SubtensorInitialBondsMovingAverage;
+    type InitialMaxAllowedUids 					= SubtensorInitialMaxAllowedUids;
+    type InitialMinAllowedWeights 				= SubtensorInitialMinAllowedWeights;
+    type InitialEmissionValue 					= SubtensorInitialEmissionValue;
+    type InitialMaxWeightsLimit 				= SubtensorInitialMaxWeightsLimit;
+    type InitialValidatorPruneLen 				= SubtensorInitialValidatorPruneLen;
+    type InitialScalingLawPower 				= SubtensorInitialScalingLawPower;
+    type InitialTempo 							= SubtensorInitialTempo;
+    type InitialAdjustmentInterval 				= SubtensorInitialAdjustmentInterval;
+    type InitialAdjustmentAlpha 				= SubtensorInitialAdjustmentAlpha;
+    type InitialTargetRegistrationsPerInterval 	= SubtensorInitialTargetRegistrationsPerInterval;
+    type InitialImmunityPeriod 					= SubtensorInitialImmunityPeriod;
+    type InitialActivityCutoff 					= SubtensorInitialActivityCutoff;
+    type InitialMaxRegistrationsPerBlock 		= SubtensorInitialMaxRegistrationsPerBlock;
+    type InitialMaxAllowedValidators 			= SubtensorInitialMaxAllowedValidators;
+    type InitialPruningScore 					= SubtensorInitialPruningScore;
+    type InitialDefaultDelegateTake 			= SubtensorInitialDefaultTake;
+    type InitialDefaultChildKeyTake 			= SubtensorInitialDefaultChildKeyTake;
+    type InitialMinDelegateTake 				= SubtensorInitialMinDelegateTake;
+    type InitialMinChildKeyTake 				= SubtensorInitialMinChildKeyTake;
+    type InitialWeightsVersionKey 				= SubtensorInitialWeightsVersionKey;
+    type InitialDifficulty 						= SubtensorInitialDifficulty;
+    type InitialMaxDifficulty 					= SubtensorInitialMaxDifficulty;
+    type InitialMinDifficulty 					= SubtensorInitialMinDifficulty;
+    type InitialServingRateLimit 				= SubtensorInitialServingRateLimit;
+    type InitialBurn 							= SubtensorInitialBurn;
+    type InitialMaxBurn 						= SubtensorInitialMaxBurn;
+    type InitialMinBurn 						= SubtensorInitialMinBurn;
 
-    type MaxFields = MaxCommitFields;
-    type InitialDeposit = CommitmentInitialDeposit;
-    type FieldDeposit = CommitmentFieldDeposit;
-    type RateLimit = CommitmentRateLimit;
+	// --
+    type InitialTxRateLimit 					= SubtensorInitialTxRateLimit;
+    type InitialTxDelegateTakeRateLimit 		= SubtensorInitialTxDelegateTakeRateLimit;
+    type InitialTxChildKeyTakeRateLimit 		= SubtensorInitialTxChildKeyTakeRateLimit;
+    type InitialMaxChildKeyTake 				= SubtensorInitialMaxChildKeyTake;
+    type InitialRAORecycledForRegistration 		= SubtensorInitialRAORecycledForRegistration;
+    type InitialSenateRequiredStakePercentage 	= SubtensorInitialSenateRequiredStakePercentage;
+    type InitialNetworkImmunityPeriod 			= SubtensorInitialNetworkImmunity;
+    type InitialNetworkMinAllowedUids 			= SubtensorInitialMinAllowedUids;
+    type InitialNetworkMinLockCost 				= SubtensorInitialMinLockCost;
+    type InitialNetworkLockReductionInterval 	= SubtensorInitialNetworkLockReductionInterval;
+    type InitialSubnetOwnerCut 					= SubtensorInitialSubnetOwnerCut;
+    type InitialSubnetLimit 					= SubtensorInitialSubnetLimit;
+    type InitialFirstReservedNetuids            = ConstU16<100>;
+    type InitialNetworkRateLimit 				= SubtensorInitialNetworkRateLimit;
+    type InitialTargetStakesPerInterval 		= SubtensorInitialTargetStakesPerInterval;
+    type KeySwapCost 							= SubtensorInitialKeySwapCost;
+    type AlphaHigh 								= InitialAlphaHigh;
+    type AlphaLow 								= InitialAlphaLow;
+    type LiquidAlphaOn 							= InitialLiquidAlphaOn;
+    type InitialHotkeyEmissionTempo 			= SubtensorInitialHotkeyEmissionTempo;
+    type InitialNetworkMaxStake 				= SubtensorInitialNetworkMaxStake;
+    type Preimages 								= Preimage;
+    type InitialColdkeySwapScheduleDuration 	= InitialColdkeySwapScheduleDuration;
+    type InitialDissolveNetworkScheduleDuration = InitialDissolveNetworkScheduleDuration;
 }
-
+parameter_types! {
+    pub const SubtensorInitialRho							: u16 = 10;
+    pub const SubtensorInitialKappa							: u16 = 32_767; // 0.5 = 65535/2
+    pub const SubtensorInitialMaxAllowedUids				: u16 = 4096;
+    pub const SubtensorInitialIssuance						: u64 = 0;
+    pub const SubtensorInitialMinAllowedWeights				: u16 = 1024;
+    pub const SubtensorInitialEmissionValue					: u16 = 0;
+    pub const SubtensorInitialMaxWeightsLimit				: u16 = 1000; // 1000/2^16 = 0.015
+    pub const SubtensorInitialValidatorPruneLen				: u64 = 1;
+    pub const SubtensorInitialScalingLawPower				: u16 = 50; // 0.5
+    pub const SubtensorInitialMaxAllowedValidators			: u16 = 128;
+    pub const SubtensorInitialTempo							: u16 = INITIAL_SUBNET_TEMPO;
+    pub const SubtensorInitialDifficulty					: u64 = 10_000_000;
+    pub const SubtensorInitialAdjustmentInterval			: u16 = 100;
+    pub const SubtensorInitialAdjustmentAlpha				: u64 = 0; // no weight to previous value.
+    pub const SubtensorInitialTargetRegistrationsPerInterval: u16 = 2;
+    pub const SubtensorInitialImmunityPeriod				: u16 = 4096;
+    pub const SubtensorInitialActivityCutoff				: u16 = 5000;
+    pub const SubtensorInitialMaxRegistrationsPerBlock		: u16 = 1;
+    pub const SubtensorInitialPruningScore 					: u16 = u16::MAX;
+    pub const SubtensorInitialBondsMovingAverage			: u64 = 900_000;
+    pub const SubtensorInitialDefaultTake					: u16 = 11_796; // 18% honest number.
+    pub const SubtensorInitialMinDelegateTake				: u16 = 0; // Allow 0% delegate take
+    pub const SubtensorInitialDefaultChildKeyTake			: u16 = 0; // Allow 0% childkey take
+    pub const SubtensorInitialMinChildKeyTake				: u16 = 0; // 0 %
+    pub const SubtensorInitialMaxChildKeyTake				: u16 = 11_796; // 18 %
+    pub const SubtensorInitialWeightsVersionKey				: u64 = 0;
+    pub const SubtensorInitialMinDifficulty					: u64 = 10_000_000;
+    pub const SubtensorInitialMaxDifficulty					: u64 = u64::MAX / 4;
+    pub const SubtensorInitialServingRateLimit				: u64 = 50;
+    pub const SubtensorInitialBurn							: u64 = 1_000_000_000; // 1 tao
+    pub const SubtensorInitialMinBurn						: u64 = 1_000_000_000; // 1 tao
+    pub const SubtensorInitialMaxBurn						: u64 = 100_000_000_000; // 100 tao
+    pub const SubtensorInitialTxRateLimit					: u64 = 1000;
+    pub const SubtensorInitialTxDelegateTakeRateLimit		: u64 = 216000; // 30 days at 12 seconds per block
+    pub const SubtensorInitialTxChildKeyTakeRateLimit		: u64 = INITIAL_CHILDKEY_TAKE_RATELIMIT;
+    pub const SubtensorInitialRAORecycledForRegistration	: u64 = 0; // 0 rao
+    pub const SubtensorInitialSenateRequiredStakePercentage	: u64 = 1; // 1 percent of total stake
+    pub const SubtensorInitialNetworkImmunity				: u64 = 7 * 7200;
+    pub const SubtensorInitialMinAllowedUids				: u16 = 128;
+    pub const SubtensorInitialMinLockCost					: u64 = 1_000_000_000_000; // 1000 TAO
+    pub const SubtensorInitialSubnetOwnerCut				: u16 = 11_796; // 18 percent
+    pub const SubtensorInitialSubnetLimit					: u16 = 20; // bittensor_value was 12;
+    pub const SubtensorInitialNetworkLockReductionInterval	: u64 = 14 * 7200;
+    pub const SubtensorInitialNetworkRateLimit				: u64 = 7200;
+    pub const SubtensorInitialTargetStakesPerInterval		: u16 = 1;
+    pub const SubtensorInitialKeySwapCost					: u64 = 1_000_000_000;
+    pub const InitialAlphaHigh								: u16 = 58982; // Represents 0.9 as per the production default
+    pub const InitialAlphaLow								: u16 = 45875; // Represents 0.7 as per the production default
+    pub const InitialLiquidAlphaOn							: bool = false; // Default value for LiquidAlphaOn
+    pub const SubtensorInitialHotkeyEmissionTempo			: u64 = 7200; // Drain every day.
+    pub const SubtensorInitialNetworkMaxStake				: u64 = u64::MAX; // Maximum possible value for u64, this make the make stake infinity
+    pub const InitialColdkeySwapScheduleDuration			: BlockNumber = 5 * 24 * 60 * 60 / 12; // 5 days
+    pub const InitialDissolveNetworkScheduleDuration		: BlockNumber = 5 * 24 * 60 * 60 / 12; // 5 days
+}
 #[cfg(not(feature = "fast-blocks"))]
 pub const INITIAL_SUBNET_TEMPO: u16 = 99;
 
@@ -929,127 +998,56 @@ pub const INITIAL_CHILDKEY_TAKE_RATELIMIT: u64 = 216000; // 30 days at 12 second
 #[cfg(feature = "fast-blocks")]
 pub const INITIAL_CHILDKEY_TAKE_RATELIMIT: u64 = 5;
 
-// Configure the pallet subtensor.
-parameter_types! {
-    pub const SubtensorInitialRho: u16 = 10;
-    pub const SubtensorInitialKappa: u16 = 32_767; // 0.5 = 65535/2
-    pub const SubtensorInitialMaxAllowedUids: u16 = 4096;
-    pub const SubtensorInitialIssuance: u64 = 0;
-    pub const SubtensorInitialMinAllowedWeights: u16 = 1024;
-    pub const SubtensorInitialEmissionValue: u16 = 0;
-    pub const SubtensorInitialMaxWeightsLimit: u16 = 1000; // 1000/2^16 = 0.015
-    pub const SubtensorInitialValidatorPruneLen: u64 = 1;
-    pub const SubtensorInitialScalingLawPower: u16 = 50; // 0.5
-    pub const SubtensorInitialMaxAllowedValidators: u16 = 128;
-    pub const SubtensorInitialTempo: u16 = INITIAL_SUBNET_TEMPO;
-    pub const SubtensorInitialDifficulty: u64 = 10_000_000;
-    pub const SubtensorInitialAdjustmentInterval: u16 = 100;
-    pub const SubtensorInitialAdjustmentAlpha: u64 = 0; // no weight to previous value.
-    pub const SubtensorInitialTargetRegistrationsPerInterval: u16 = 2;
-    pub const SubtensorInitialImmunityPeriod: u16 = 4096;
-    pub const SubtensorInitialActivityCutoff: u16 = 5000;
-    pub const SubtensorInitialMaxRegistrationsPerBlock: u16 = 1;
-    pub const SubtensorInitialPruningScore : u16 = u16::MAX;
-    pub const SubtensorInitialBondsMovingAverage: u64 = 900_000;
-    pub const SubtensorInitialDefaultTake: u16 = 11_796; // 18% honest number.
-    pub const SubtensorInitialMinDelegateTake: u16 = 0; // Allow 0% delegate take
-    pub const SubtensorInitialDefaultChildKeyTake: u16 = 0; // Allow 0% childkey take
-    pub const SubtensorInitialMinChildKeyTake: u16 = 0; // 0 %
-    pub const SubtensorInitialMaxChildKeyTake: u16 = 11_796; // 18 %
-    pub const SubtensorInitialWeightsVersionKey: u64 = 0;
-    pub const SubtensorInitialMinDifficulty: u64 = 10_000_000;
-    pub const SubtensorInitialMaxDifficulty: u64 = u64::MAX / 4;
-    pub const SubtensorInitialServingRateLimit: u64 = 50;
-    pub const SubtensorInitialBurn: u64 = 1_000_000_000; // 1 tao
-    pub const SubtensorInitialMinBurn: u64 = 1_000_000_000; // 1 tao
-    pub const SubtensorInitialMaxBurn: u64 = 100_000_000_000; // 100 tao
-    pub const SubtensorInitialTxRateLimit: u64 = 1000;
-    pub const SubtensorInitialTxDelegateTakeRateLimit: u64 = 216000; // 30 days at 12 seconds per block
-    pub const SubtensorInitialTxChildKeyTakeRateLimit: u64 = INITIAL_CHILDKEY_TAKE_RATELIMIT;
-    pub const SubtensorInitialRAORecycledForRegistration: u64 = 0; // 0 rao
-    pub const SubtensorInitialSenateRequiredStakePercentage: u64 = 1; // 1 percent of total stake
-    pub const SubtensorInitialNetworkImmunity: u64 = 7 * 7200;
-    pub const SubtensorInitialMinAllowedUids: u16 = 128;
-    pub const SubtensorInitialMinLockCost: u64 = 1_000_000_000_000; // 1000 TAO
-    pub const SubtensorInitialSubnetOwnerCut: u16 = 11_796; // 18 percent
-    pub const SubtensorInitialSubnetLimit: u16 = 12;
-    pub const SubtensorInitialNetworkLockReductionInterval: u64 = 14 * 7200;
-    pub const SubtensorInitialNetworkRateLimit: u64 = 7200;
-    pub const SubtensorInitialTargetStakesPerInterval: u16 = 1;
-    pub const SubtensorInitialKeySwapCost: u64 = 100_000_000; // 0.1 TAO
-    pub const InitialAlphaHigh: u16 = 58982; // Represents 0.9 as per the production default
-    pub const InitialAlphaLow: u16 = 45875; // Represents 0.7 as per the production default
-    pub const InitialLiquidAlphaOn: bool = false; // Default value for LiquidAlphaOn
-    pub const SubtensorInitialHotkeyEmissionTempo: u64 = 7200; // Drain every day.
-    pub const SubtensorInitialNetworkMaxStake: u64 = u64::MAX; // Maximum possible value for u64, this make the make stake infinity
-    pub const  InitialColdkeySwapScheduleDuration: BlockNumber = 5 * 24 * 60 * 60 / 12; // 5 days
-    pub const  InitialDissolveNetworkScheduleDuration: BlockNumber = 5 * 24 * 60 * 60 / 12; // 5 days
+type EnsureMajoritySenate =
+    pallet_collective::EnsureProportionMoreThan<AccountId, TriumvirateCollective, 1, 2>;
 
+pub struct ManageSenateMembers;
+impl MemberManagement<AccountId> for ManageSenateMembers {
+    fn add_member(account: &AccountId) -> DispatchResultWithPostInfo {
+        let who = Address::Id(account.clone());
+        SenateMembers::add_member(RawOrigin::Root.into(), who)
+    }
+
+    fn remove_member(account: &AccountId) -> DispatchResultWithPostInfo {
+        let who = Address::Id(account.clone());
+        SenateMembers::remove_member(RawOrigin::Root.into(), who)
+    }
+
+    fn swap_member(rm: &AccountId, add: &AccountId) -> DispatchResultWithPostInfo {
+        let remove = Address::Id(rm.clone());
+        let add = Address::Id(add.clone());
+
+        Triumvirate::remove_votes(rm)?;
+        SenateMembers::swap_member(RawOrigin::Root.into(), remove, add)
+    }
+
+    fn is_member(account: &AccountId) -> bool {
+        SenateMembers::members().contains(account)
+    }
+
+    fn members() -> Vec<AccountId> {
+        SenateMembers::members().into()
+    }
+
+    fn max_members() -> u32 {
+        SenateMaxMembers::get()
+    }
 }
 
-impl pallet_subtensor::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type RuntimeCall = RuntimeCall;
-    type SudoRuntimeCall = RuntimeCall;
-    type Currency = Balances;
-    type CouncilOrigin = EnsureMajoritySenate;
-    type SenateMembers = ManageSenateMembers;
-    type TriumvirateInterface = TriumvirateVotes;
-    type Scheduler = Scheduler;
-    type InitialRho = SubtensorInitialRho;
-    type InitialKappa = SubtensorInitialKappa;
-    type InitialMaxAllowedUids = SubtensorInitialMaxAllowedUids;
-    type InitialBondsMovingAverage = SubtensorInitialBondsMovingAverage;
-    type InitialIssuance = SubtensorInitialIssuance;
-    type InitialMinAllowedWeights = SubtensorInitialMinAllowedWeights;
-    type InitialEmissionValue = SubtensorInitialEmissionValue;
-    type InitialMaxWeightsLimit = SubtensorInitialMaxWeightsLimit;
-    type InitialValidatorPruneLen = SubtensorInitialValidatorPruneLen;
-    type InitialScalingLawPower = SubtensorInitialScalingLawPower;
-    type InitialTempo = SubtensorInitialTempo;
-    type InitialDifficulty = SubtensorInitialDifficulty;
-    type InitialAdjustmentInterval = SubtensorInitialAdjustmentInterval;
-    type InitialAdjustmentAlpha = SubtensorInitialAdjustmentAlpha;
-    type InitialTargetRegistrationsPerInterval = SubtensorInitialTargetRegistrationsPerInterval;
-    type InitialImmunityPeriod = SubtensorInitialImmunityPeriod;
-    type InitialActivityCutoff = SubtensorInitialActivityCutoff;
-    type InitialMaxRegistrationsPerBlock = SubtensorInitialMaxRegistrationsPerBlock;
-    type InitialPruningScore = SubtensorInitialPruningScore;
-    type InitialMaxAllowedValidators = SubtensorInitialMaxAllowedValidators;
-    type InitialDefaultDelegateTake = SubtensorInitialDefaultTake;
-    type InitialDefaultChildKeyTake = SubtensorInitialDefaultChildKeyTake;
-    type InitialMinDelegateTake = SubtensorInitialMinDelegateTake;
-    type InitialMinChildKeyTake = SubtensorInitialMinChildKeyTake;
-    type InitialWeightsVersionKey = SubtensorInitialWeightsVersionKey;
-    type InitialMaxDifficulty = SubtensorInitialMaxDifficulty;
-    type InitialMinDifficulty = SubtensorInitialMinDifficulty;
-    type InitialServingRateLimit = SubtensorInitialServingRateLimit;
-    type InitialBurn = SubtensorInitialBurn;
-    type InitialMaxBurn = SubtensorInitialMaxBurn;
-    type InitialMinBurn = SubtensorInitialMinBurn;
-    type InitialTxRateLimit = SubtensorInitialTxRateLimit;
-    type InitialTxDelegateTakeRateLimit = SubtensorInitialTxDelegateTakeRateLimit;
-    type InitialTxChildKeyTakeRateLimit = SubtensorInitialTxChildKeyTakeRateLimit;
-    type InitialMaxChildKeyTake = SubtensorInitialMaxChildKeyTake;
-    type InitialRAORecycledForRegistration = SubtensorInitialRAORecycledForRegistration;
-    type InitialSenateRequiredStakePercentage = SubtensorInitialSenateRequiredStakePercentage;
-    type InitialNetworkImmunityPeriod = SubtensorInitialNetworkImmunity;
-    type InitialNetworkMinAllowedUids = SubtensorInitialMinAllowedUids;
-    type InitialNetworkMinLockCost = SubtensorInitialMinLockCost;
-    type InitialNetworkLockReductionInterval = SubtensorInitialNetworkLockReductionInterval;
-    type InitialSubnetOwnerCut = SubtensorInitialSubnetOwnerCut;
-    type InitialSubnetLimit = SubtensorInitialSubnetLimit;
-    type InitialNetworkRateLimit = SubtensorInitialNetworkRateLimit;
-    type InitialTargetStakesPerInterval = SubtensorInitialTargetStakesPerInterval;
-    type KeySwapCost = SubtensorInitialKeySwapCost;
-    type AlphaHigh = InitialAlphaHigh;
-    type AlphaLow = InitialAlphaLow;
-    type LiquidAlphaOn = InitialLiquidAlphaOn;
-    type InitialHotkeyEmissionTempo = SubtensorInitialHotkeyEmissionTempo;
-    type InitialNetworkMaxStake = SubtensorInitialNetworkMaxStake;
-    type Preimages = Preimage;
-    type InitialColdkeySwapScheduleDuration = InitialColdkeySwapScheduleDuration;
-    type InitialDissolveNetworkScheduleDuration = InitialDissolveNetworkScheduleDuration;
+pub struct TriumvirateVotes;
+impl CollectiveInterface<AccountId, Hash, u32> for TriumvirateVotes {
+    fn remove_votes(hotkey: &AccountId) -> Result<bool, sp_runtime::DispatchError> {
+        Triumvirate::remove_votes(hotkey)
+    }
+
+    fn add_vote(
+        hotkey: &AccountId,
+        proposal: Hash,
+        index: u32,
+        approve: bool,
+    ) -> Result<bool, sp_runtime::DispatchError> {
+        Triumvirate::do_vote(hotkey.clone(), proposal, index, approve)
+    }
 }
 
 use sp_runtime::BoundedVec;
@@ -1061,13 +1059,14 @@ impl pallet_admin_utils::AuraInterface<AuraId, ConstU32<32>> for AuraPalletIntrf
     }
 }
 
+#[rustfmt::skip]
 impl pallet_admin_utils::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type AuthorityId = AuraId;
+    type RuntimeEvent 	= RuntimeEvent;
+    type AuthorityId 	= AuraId;
     type MaxAuthorities = ConstU32<32>;
-    type Aura = AuraPalletIntrf;
-    type Balance = Balance;
-    type WeightInfo = pallet_admin_utils::weights::SubstrateWeight<Runtime>;
+    type Aura 			= AuraPalletIntrf;
+    type Balance 		= Balance;
+    type WeightInfo 	= pallet_admin_utils::weights::SubstrateWeight<Runtime>;
 }
 
 // Define the ChainId
@@ -1302,34 +1301,36 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 construct_runtime!(
     pub struct Runtime
     {
-        System: frame_system = 0,
+        System      : frame_system      = 0,
         RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip = 1,
-        Timestamp: pallet_timestamp = 2,
-        Aura: pallet_aura = 3,
-        Grandpa: pallet_grandpa = 4,
-        Balances: pallet_balances = 5,
+        Timestamp   : pallet_timestamp  = 2,
+        Aura        : pallet_aura       = 3,
+        Grandpa     : pallet_grandpa    = 4,
+        Balances    : pallet_balances   = 5,
         TransactionPayment: pallet_transaction_payment = 6,
         SubtensorModule: pallet_subtensor = 7,
+
         Triumvirate: pallet_collective::<Instance1>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>} = 8,
         TriumvirateMembers: pallet_membership::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>} = 9,
         SenateMembers: pallet_membership::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>} = 10,
-        Utility: pallet_utility = 11,
-        Sudo: pallet_sudo = 12,
-        Multisig: pallet_multisig = 13,
-        Preimage: pallet_preimage = 14,
-        Scheduler: pallet_scheduler = 15,
-        Proxy: pallet_proxy = 16,
-        Registry: pallet_registry = 17,
-        Commitments: pallet_commitments = 18,
-        AdminUtils: pallet_admin_utils = 19,
-        SafeMode: pallet_safe_mode = 20,
+
+        Utility     : pallet_utility        = 11,
+        Sudo        : pallet_sudo           = 12,
+        Multisig    : pallet_multisig       = 13,
+        Preimage    : pallet_preimage       = 14,
+        Scheduler   : pallet_scheduler      = 15,
+        Proxy       : pallet_proxy          = 16,
+        Registry    : pallet_registry       = 17,
+        Commitments : pallet_commitments    = 18,
+        AdminUtils  : pallet_admin_utils    = 19,
+        SafeMode    : pallet_safe_mode      = 20,
 
         // Frontier
-        Ethereum: pallet_ethereum = 21,
-        EVM: pallet_evm = 22,
-        EVMChainId: pallet_evm_chain_id = 23,
-        DynamicFee: pallet_dynamic_fee = 24,
-        BaseFee: pallet_base_fee = 25,
+        Ethereum    : pallet_ethereum       = 21,
+        EVM         : pallet_evm            = 22,
+        EVMChainId  : pallet_evm_chain_id   = 23,
+        DynamicFee  : pallet_dynamic_fee    = 24,
+        BaseFee     : pallet_base_fee       = 25,
     }
 );
 

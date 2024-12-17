@@ -440,6 +440,11 @@ pub mod pallet {
         T::InitialSubnetLimit::get()
     }
     #[pallet::type_value]
+    /// Default value for number of reserved subnets.
+    pub fn DefaultFirstReservedNetuids<T: Config>() -> u16 {
+        T::InitialFirstReservedNetuids::get()
+    }
+    #[pallet::type_value]
     /// Default value for network rate limit.
     pub fn DefaultNetworkRateLimit<T: Config>() -> u64 {
         if cfg!(feature = "pow-faucet") {
@@ -855,48 +860,83 @@ pub mod pallet {
     /// ============================
     /// ==== Global Parameters =====
     /// ============================
+
     #[pallet::storage]
     /// --- StorageItem Global Used Work.
     pub type UsedWork<T: Config> = StorageMap<_, Identity, Vec<u8>, u64, ValueQuery>;
+
     #[pallet::storage]
     /// --- ITEM( global_max_registrations_per_block )
     pub type MaxRegistrationsPerBlock<T> =
         StorageMap<_, Identity, u16, u16, ValueQuery, DefaultMaxRegistrationsPerBlock<T>>;
+
+    /// Subnet counter type
+    pub type SubnetCount = u16;
+
+    #[pallet::storage]
+    /// --- ITEM( maximum_number_of_networks ) (max user subnets)
+    pub type SubnetLimit<T> = StorageValue<_, SubnetCount, ValueQuery, DefaultSubnetLimit<T>>;
+
     #[pallet::storage]
     /// --- ITEM( maximum_number_of_networks )
-    pub type SubnetLimit<T> = StorageValue<_, u16, ValueQuery, DefaultSubnetLimit<T>>;
+    pub type FirstReservedNetuids<T> =
+        StorageValue<_, SubnetCount, ValueQuery, DefaultFirstReservedNetuids<T>>;
+
+    #[pallet::storage]
+    /// --- ITEM( is_root_subnet_added )
+    pub type HasRootSubnet<T> = StorageValue<_, bool, ValueQuery>;
+
+    // TODO: remove after fixing CLI & SDK
+    // currently we kept it for bc to bittensor
     #[pallet::storage]
     /// --- ITEM( total_number_of_existing_networks )
     pub type TotalNetworks<T> = StorageValue<_, u16, ValueQuery>;
+
+    #[pallet::storage]
+    /// --- ITEM( maximum_number_of_networks )
+    pub type ReservedSubnetCount<T> = StorageValue<_, SubnetCount, ValueQuery>;
+
+    #[pallet::storage]
+    /// --- ITEM( maximum_number_of_networks )
+    pub type UserSubnetCount<T> = StorageValue<_, SubnetCount, ValueQuery>;
+
     #[pallet::storage]
     /// ITEM( network_immunity_period )
     pub type NetworkImmunityPeriod<T> =
         StorageValue<_, u64, ValueQuery, DefaultNetworkImmunityPeriod<T>>;
+
     #[pallet::storage]
     /// ITEM( network_last_registered_block )
     pub type NetworkLastRegistered<T> =
         StorageValue<_, u64, ValueQuery, DefaultNetworkLastRegistered<T>>;
+
     #[pallet::storage]
     /// ITEM( network_min_allowed_uids )
     pub type NetworkMinAllowedUids<T> =
         StorageValue<_, u16, ValueQuery, DefaultNetworkMinAllowedUids<T>>;
+
     #[pallet::storage]
     /// ITEM( min_network_lock_cost )
     pub type NetworkMinLockCost<T> = StorageValue<_, u64, ValueQuery, DefaultNetworkMinLockCost<T>>;
+
     #[pallet::storage]
     /// ITEM( last_network_lock_cost )
     pub type NetworkLastLockCost<T> =
         StorageValue<_, u64, ValueQuery, DefaultNetworkMinLockCost<T>>;
+
     #[pallet::storage]
     /// ITEM( network_lock_reduction_interval )
     pub type NetworkLockReductionInterval<T> =
         StorageValue<_, u64, ValueQuery, DefaultNetworkLockReductionInterval<T>>;
+
     #[pallet::storage]
     /// ITEM( subnet_owner_cut )
     pub type SubnetOwnerCut<T> = StorageValue<_, u16, ValueQuery, DefaultSubnetOwnerCut<T>>;
+
     #[pallet::storage]
     /// ITEM( network_rate_limit )
     pub type NetworkRateLimit<T> = StorageValue<_, u64, ValueQuery, DefaultNetworkRateLimit<T>>;
+
     #[pallet::storage]
     /// ITEM( nominator_min_required_stake )
     pub type NominatorMinRequiredStake<T> =

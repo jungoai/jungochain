@@ -47,23 +47,23 @@ mod config {
         /// the preimage to store the call data.
         type Preimages: QueryPreimage<H = Self::Hashing> + StorePreimage;
 
-        /// =================================
-        /// ==== Initial Value Constants ====
-        /// =================================
+        // =================================
+        // ==== Initial Value Constants ====
+        // =================================
 
-        /// Initial currency issuance.
+        /// Default total currency issuance.
         #[pallet::constant]
         type InitialIssuance: Get<u64>;
-        /// Initial min allowed weights setting.
+        /// Minimum number of UIDs a subnet validator must set weights on
         #[pallet::constant]
         type InitialMinAllowedWeights: Get<u16>;
-        /// Initial Emission Ratio.
+        /// Initial Emission Ratio. TODO: study
         #[pallet::constant]
         type InitialEmissionValue: Get<u16>;
-        /// Initial max weight limit.
+        /// Max wight that validator can be set for miners in a subnet
         #[pallet::constant]
         type InitialMaxWeightsLimit: Get<u16>;
-        /// Tempo for each network.
+        /// Tempo is the block interval to run epoch for each subnet, (emission will propagate at each epoch)
         #[pallet::constant]
         type InitialTempo: Get<u16>;
         /// Initial Difficulty.
@@ -81,19 +81,19 @@ mod config {
         /// Initial Burn.
         #[pallet::constant]
         type InitialBurn: Get<u64>;
-        /// Initial Max Burn.
+        /// Maximum cost to register on this subnet
         #[pallet::constant]
         type InitialMaxBurn: Get<u64>;
-        /// Initial Min Burn.
+        /// Minimum cost to register on this subnet
         #[pallet::constant]
         type InitialMinBurn: Get<u64>;
-        /// Initial adjustment interval.
+        /// Number of blocks after which the recycle register cost and the pow_register difficulty are recalculated
         #[pallet::constant]
         type InitialAdjustmentInterval: Get<u16>;
         /// Initial bonds moving average.
         #[pallet::constant]
         type InitialBondsMovingAverage: Get<u64>;
-        /// Initial target registrations per interval.
+        /// The target number of registrations desired in a AdjustmentInterval period
         #[pallet::constant]
         type InitialTargetRegistrationsPerInterval: Get<u16>;
         /// Rho constant.
@@ -102,22 +102,24 @@ mod config {
         /// Kappa constant.
         #[pallet::constant]
         type InitialKappa: Get<u16>;
-        /// Max UID constant.
+        /// Max allowed neuron, each neuron has an uid
         #[pallet::constant]
         type InitialMaxAllowedUids: Get<u16>;
         /// Initial validator context pruning length.
         #[pallet::constant]
         type InitialValidatorPruneLen: Get<u64>;
-        /// Initial scaling law power.
+        /// Initial scaling law power. TODO: study
         #[pallet::constant]
         type InitialScalingLawPower: Get<u16>;
-        /// Immunity Period Constant.
+        /// The immunity period is the number of blocks given to a subnet miner or a subnet validator
+        /// at a UID before they are considered available for deregistration.
         #[pallet::constant]
         type InitialImmunityPeriod: Get<u16>;
-        /// Activity constant.
+        /// If a subnet validator has not set weights on the blockchain for activity_cutoff duration,
+        /// then the Yuma Consensus will consider this subnet validator as offline
         #[pallet::constant]
         type InitialActivityCutoff: Get<u16>;
-        /// Initial max registrations per block.
+        /// Maximum allowed registrations in a subnet per block
         #[pallet::constant]
         type InitialMaxRegistrationsPerBlock: Get<u16>;
         /// Initial pruning score for each neuron.
@@ -141,7 +143,7 @@ mod config {
         /// Initial maximum childkey take.
         #[pallet::constant]
         type InitialMaxChildKeyTake: Get<u16>;
-        /// Initial weights version key.
+        /// Minimum required version of the subnet validator code
         #[pallet::constant]
         type InitialWeightsVersionKey: Get<u64>;
         /// Initial serving rate limit.
@@ -160,6 +162,7 @@ mod config {
         #[pallet::constant]
         type InitialSenateRequiredStakePercentage: Get<u64>;
         /// Initial adjustment alpha on burn and pow.
+        /// TODO: (https://docs.bittensor.com/subnets/subnet-hyperparameters#adjustment_alpha)
         #[pallet::constant]
         type InitialAdjustmentAlpha: Get<u64>;
         /// Initial network immunity period
@@ -168,19 +171,22 @@ mod config {
         /// Initial minimum allowed network UIDs
         #[pallet::constant]
         type InitialNetworkMinAllowedUids: Get<u16>;
-        /// Initial network minimum burn cost
+        /// Minimum Subnet Registration Cost
         #[pallet::constant]
         type InitialNetworkMinLockCost: Get<u64>;
         /// Initial network subnet cut.
         #[pallet::constant]
         type InitialSubnetOwnerCut: Get<u16>;
-        /// Initial lock reduction interval.
+        /// Used to calcualte Subnet Reg Cost
         #[pallet::constant]
         type InitialNetworkLockReductionInterval: Get<u64>;
         /// Initial max allowed subnets
         #[pallet::constant]
-        type InitialSubnetLimit: Get<u16>;
-        /// Initial network creation rate limit
+        type InitialSubnetLimit: Get<SubnetCount>;
+        #[pallet::constant]
+        /// Initial number of reserved subnets
+        type InitialFirstReservedNetuids: Get<SubnetCount>;
+        /// Minimum block interval to be allowed to register a Subnet
         #[pallet::constant]
         type InitialNetworkRateLimit: Get<u64>;
         /// Initial target stakes per interval issuance.

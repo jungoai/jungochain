@@ -127,7 +127,9 @@ runtime-benchmarks = [
 	"sp-runtime/runtime-benchmarks",
 	"pallet-commitments/runtime-benchmarks",
 ]
-pow-faucet = []
+pow-faucet = [
+    "node-subtensor-runtime/pow-faucet"
+]
 
 # Enable features that allow the runtime to be tried and debugged. Name might be subject to change
 # in the near future.

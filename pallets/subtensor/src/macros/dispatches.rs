@@ -1058,7 +1058,16 @@ mod dispatches {
 		.saturating_add(T::DbWeight::get().reads(16))
 		.saturating_add(T::DbWeight::get().writes(30)), DispatchClass::Operational, Pays::No))]
         pub fn register_network(origin: OriginFor<T>) -> DispatchResult {
-            Self::user_add_network(origin, None)
+            Self::user_add_network(origin, None, false)
+        }
+
+        /// Register a new subnet in a reserved netuid
+        #[pallet::call_index(99)]
+        #[pallet::weight((Weight::from_parts(157_000_000, 0)
+            .saturating_add(T::DbWeight::get().reads(16))
+            .saturating_add(T::DbWeight::get().writes(30)), DispatchClass::Operational, Pays::No))]
+        pub fn register_reserved_subnet(origin: OriginFor<T>) -> DispatchResult {
+            Self::user_add_network(origin, None, true)
         }
 
         /// Facility extrinsic for user to get taken from faucet
@@ -1364,7 +1373,19 @@ mod dispatches {
             origin: OriginFor<T>,
             identity: Option<SubnetIdentityOf>,
         ) -> DispatchResult {
-            Self::user_add_network(origin, identity)
+            Self::user_add_network(origin, identity, false)
+        }
+
+        /// Register a new subnet in a reserved netuid with identity
+        #[pallet::call_index(100)]
+        #[pallet::weight((Weight::from_parts(157_000_000, 0)
+                .saturating_add(T::DbWeight::get().reads(16))
+                .saturating_add(T::DbWeight::get().writes(30)), DispatchClass::Operational, Pays::No))]
+        pub fn register_reserved_subnet_with_identity(
+            origin: OriginFor<T>,
+            identity: Option<SubnetIdentityOf>,
+        ) -> DispatchResult {
+            Self::user_add_network(origin, identity, true)
         }
     }
 }

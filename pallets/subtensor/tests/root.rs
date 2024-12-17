@@ -4,8 +4,8 @@ use crate::mock::*;
 use frame_support::{assert_err, assert_ok};
 use frame_system::Config;
 use frame_system::{EventRecord, Phase};
-use pallet_subtensor::Error;
 use pallet_subtensor::{migrations, SubnetIdentity};
+use pallet_subtensor::{Error, FirstReservedNetuids};
 use pallet_subtensor::{SubnetIdentities, SubnetIdentityOf};
 use sp_core::{Get, H256, U256};
 
@@ -233,17 +233,17 @@ fn test_root_set_weights() {
         );
 
         // Lets create n networks
-        for netuid in 1..n {
-            log::debug!("Adding network with netuid: {}", netuid);
+        for i in 1..n {
+            log::debug!("Adding network with netuid: {}", unid(i as u16));
             assert_ok!(SubtensorModule::register_network(
-                <<Test as Config>::RuntimeOrigin>::signed(U256::from(netuid + 456)),
+                <<Test as Config>::RuntimeOrigin>::signed(U256::from(i + 456)),
             ));
         }
 
         // Test that signing with hotkey will fail.
         for i in 0..n {
             let hotkey = U256::from(i);
-            let uids: Vec<u16> = vec![i as u16];
+            let uids: Vec<u16> = vec![unid_or_zero(i as u16)];
             let values: Vec<u16> = vec![1];
             assert_err!(
                 SubtensorModule::set_root_weights(
@@ -262,7 +262,7 @@ fn test_root_set_weights() {
         let unassociated_coldkey = U256::from(612);
         for i in 0..n {
             let hotkey = U256::from(i);
-            let uids: Vec<u16> = vec![i as u16];
+            let uids: Vec<u16> = vec![unid_or_zero(i as u16)];
             let values: Vec<u16> = vec![1];
             assert_err!(
                 SubtensorModule::set_root_weights(
@@ -281,7 +281,7 @@ fn test_root_set_weights() {
         for i in 0..n {
             let hotkey = U256::from(i);
             let coldkey = U256::from(i + 456);
-            let uids: Vec<u16> = vec![i as u16];
+            let uids: Vec<u16> = vec![unid_or_zero(i as u16)];
             let values: Vec<u16> = vec![1];
             assert_ok!(SubtensorModule::set_root_weights(
                 <<Test as Config>::RuntimeOrigin>::signed(coldkey),
@@ -297,35 +297,35 @@ fn test_root_set_weights() {
         SubtensorModule::set_tempo(root_netuid, 1);
         assert_ok!(SubtensorModule::root_epoch(1_000_000_000));
         // Check that the emission values have been set.
-        for netuid in 1..n {
-            log::debug!("check emission for netuid: {}", netuid);
+        for i in 1..n {
+            log::debug!("check emission for netuid: {}", unid(i as u16));
             assert_eq!(
-                SubtensorModule::get_subnet_emission_value(netuid as u16),
+                SubtensorModule::get_subnet_emission_value(unid(i as u16)),
                 99_999_999
             );
         }
         step_block(2);
         // Check that the pending emission values have been set.
-        for netuid in 1..n {
+        for i in 1..n {
             log::debug!(
                 "check pending emission for netuid {} has pending {}",
-                netuid,
-                SubtensorModule::get_pending_emission(netuid as u16)
+                unid(i as u16),
+                SubtensorModule::get_pending_emission(unid(i as u16))
             );
             assert_eq!(
-                SubtensorModule::get_pending_emission(netuid as u16),
+                SubtensorModule::get_pending_emission(unid(i as u16)),
                 199_999_998
             );
         }
         step_block(1);
-        for netuid in 1..n {
+        for i in 1..n {
             log::debug!(
                 "check pending emission for netuid {} has pending {}",
-                netuid,
-                SubtensorModule::get_pending_emission(netuid as u16)
+                unid(i as u16),
+                SubtensorModule::get_pending_emission(unid(i as u16))
             );
             assert_eq!(
-                SubtensorModule::get_pending_emission(netuid as u16),
+                SubtensorModule::get_pending_emission(unid(i as u16)),
                 299_999_997
             );
         }
@@ -376,15 +376,15 @@ fn test_root_set_weights_out_of_order_netuids() {
         );
 
         // Lets create n networks
-        for netuid in 1..n {
-            log::debug!("Adding network with netuid: {}", netuid);
+        for i in 1..n {
+            log::debug!("Adding network with netuid: {}", unid(i as u16));
 
-            if netuid % 2 == 0 {
+            if unid(i as u16) % 2 == 0 {
                 assert_ok!(SubtensorModule::register_network(
-                    <<Test as Config>::RuntimeOrigin>::signed(U256::from(netuid)),
+                    <<Test as Config>::RuntimeOrigin>::signed(U256::from(i)),
                 ));
             } else {
-                add_network(netuid as u16 * 10, 1000, 0)
+                add_network(unid(i as u16 * 10), 1000, 0)
             }
         }
 
@@ -560,7 +560,7 @@ fn test_network_pruning() {
         for i in 0..n {
             let hot: U256 = U256::from(i);
             let cold: U256 = U256::from(i);
-            let uids: Vec<u16> = (0..i as u16).collect();
+            let uids: Vec<u16> = (0..i as u16).map(unid_or_zero).collect();
             let values: Vec<u16> = vec![1; i];
             SubtensorModule::add_balance_to_coldkey_account(&cold, 1_000_000_000_000_000);
             assert_ok!(SubtensorModule::root_register(
@@ -575,8 +575,8 @@ fn test_network_pruning() {
             assert_ok!(SubtensorModule::register_network(
                 <<Test as Config>::RuntimeOrigin>::signed(cold),
             ));
-            log::debug!("Adding network with netuid: {}", (i as u16) + 1);
-            assert!(SubtensorModule::if_subnet_exist((i as u16) + 1));
+            log::debug!("Adding network with netuid: {}", unid(i as u16 + 1));
+            assert!(SubtensorModule::if_subnet_exist(unid(i as u16 + 1)));
             assert!(SubtensorModule::is_hotkey_registered_on_network(
                 root_netuid,
                 &hot
@@ -590,17 +590,14 @@ fn test_network_pruning() {
                 values,
                 0
             ));
-            SubtensorModule::set_tempo((i as u16) + 1, 1);
-            SubtensorModule::set_burn((i as u16) + 1, 0);
+            SubtensorModule::set_tempo(unid(i as u16 + 1), 1);
+            SubtensorModule::set_burn(unid(i as u16 + 1), 0);
             assert_ok!(SubtensorModule::burned_register(
                 <<Test as Config>::RuntimeOrigin>::signed(cold),
-                (i as u16) + 1,
+                unid(i as u16 + 1),
                 hot
             ));
-            assert_eq!(
-                SubtensorModule::get_subnetwork_n(root_netuid),
-                (i as u16) + 1
-            );
+            assert_eq!(SubtensorModule::get_subnetwork_n(root_netuid), i as u16 + 1);
         }
         // Stakes
         // 0 : 10_000
@@ -617,22 +614,38 @@ fn test_network_pruning() {
         step_block(1);
         assert_ok!(SubtensorModule::root_epoch(1_000_000_000));
         assert_eq!(SubtensorModule::get_subnet_emission_value(0), 385_861_815);
-        assert_eq!(SubtensorModule::get_subnet_emission_value(1), 249_435_914);
-        assert_eq!(SubtensorModule::get_subnet_emission_value(2), 180_819_837);
-        assert_eq!(SubtensorModule::get_subnet_emission_value(3), 129_362_980);
-        assert_eq!(SubtensorModule::get_subnet_emission_value(4), 50_857_187);
-        assert_eq!(SubtensorModule::get_subnet_emission_value(5), 3_530_356);
+        assert_eq!(
+            SubtensorModule::get_subnet_emission_value(unid(1)),
+            249_435_914
+        );
+        assert_eq!(
+            SubtensorModule::get_subnet_emission_value(unid(2)),
+            180_819_837
+        );
+        assert_eq!(
+            SubtensorModule::get_subnet_emission_value(unid(3)),
+            129_362_980
+        );
+        assert_eq!(
+            SubtensorModule::get_subnet_emission_value(unid(4)),
+            50_857_187
+        );
+        assert_eq!(
+            SubtensorModule::get_subnet_emission_value(unid(5)),
+            3_530_356
+        );
         step_block(1);
         assert_eq!(SubtensorModule::get_pending_emission(0), 0); // root network gets no pending emission.
-        assert_eq!(SubtensorModule::get_pending_emission(1), 249_435_914);
-        assert_eq!(SubtensorModule::get_pending_emission(2), 0); // This has been drained.
-        assert_eq!(SubtensorModule::get_pending_emission(3), 129_362_980);
-        assert_eq!(SubtensorModule::get_pending_emission(4), 0); // This network has been drained.
-        assert_eq!(SubtensorModule::get_pending_emission(5), 3_530_356);
+        assert_eq!(SubtensorModule::get_pending_emission(unid(1)), 249_435_914);
+        assert_eq!(SubtensorModule::get_pending_emission(unid(2)), 0); // This has been drained.
+        assert_eq!(SubtensorModule::get_pending_emission(unid(3)), 129_362_980);
+        assert_eq!(SubtensorModule::get_pending_emission(unid(4)), 0); // This network has been drained.
+        assert_eq!(SubtensorModule::get_pending_emission(unid(5)), 3_530_356);
         step_block(1);
     });
 }
 
+#[rustfmt::skip]
 #[test]
 fn test_network_prune_results() {
     new_test_ext(1).execute_with(|| {
@@ -644,6 +657,9 @@ fn test_network_prune_results() {
 
         let owner: U256 = U256::from(0);
         SubtensorModule::add_balance_to_coldkey_account(&owner, 1_000_000_000_000_000);
+
+        // --------------------------------------------------------------------
+        // -- User subnet
 
         assert_ok!(SubtensorModule::register_network(
             <<Test as Config>::RuntimeOrigin>::signed(owner),
@@ -661,16 +677,70 @@ fn test_network_prune_results() {
         step_block(3);
 
         // lowest emission
-        SubtensorModule::set_emission_values(&[1u16, 2u16, 3u16], vec![5u64, 4u64, 4u64]).unwrap();
-        assert_eq!(SubtensorModule::get_subnet_to_prune(), 2u16);
+        SubtensorModule::set_emission_values(
+            &[unid(1u16), unid(2u16), unid(3u16)],
+            vec![  5u64,       4u64,       4u64],
+        )
+        .unwrap();
+        assert_eq!(SubtensorModule::get_user_subnet_to_prune(), unid(2u16));
 
         // equal emission, creation date
-        SubtensorModule::set_emission_values(&[1u16, 2u16, 3u16], vec![5u64, 5u64, 4u64]).unwrap();
-        assert_eq!(SubtensorModule::get_subnet_to_prune(), 3u16);
+        SubtensorModule::set_emission_values(
+            &[unid(1u16), unid(2u16), unid(3u16)],
+            vec![  5u64,       5u64,       4u64]
+        )
+        .unwrap();
+        assert_eq!(SubtensorModule::get_user_subnet_to_prune(), unid(3u16));
 
         // equal emission, creation date
-        SubtensorModule::set_emission_values(&[1u16, 2u16, 3u16], vec![4u64, 5u64, 5u64]).unwrap();
-        assert_eq!(SubtensorModule::get_subnet_to_prune(), 1u16);
+        SubtensorModule::set_emission_values(
+            &[unid(1u16), unid(2u16), unid(3u16)],
+            vec![  4u64,       5u64,       5u64]
+        )
+        .unwrap();
+        assert_eq!(SubtensorModule::get_user_subnet_to_prune(), unid(1u16));
+
+        // --------------------------------------------------------------------
+        // -- Reserved subnet
+
+        assert_ok!(SubtensorModule::register_reserved_subnet(
+            <<Test as Config>::RuntimeOrigin>::signed(owner),
+        ));
+        step_block(3);
+
+        assert_ok!(SubtensorModule::register_reserved_subnet(
+            <<Test as Config>::RuntimeOrigin>::signed(owner),
+        ));
+        step_block(3);
+
+        assert_ok!(SubtensorModule::register_reserved_subnet(
+            <<Test as Config>::RuntimeOrigin>::signed(owner),
+        ));
+        step_block(3);
+
+        // lowest emission
+        SubtensorModule::set_emission_values(
+               &[1u16, 2u16, 3u16],
+            vec![5u64, 4u64, 4u64]
+        )
+        .unwrap();
+        assert_eq!(SubtensorModule::get_reserved_subnet_to_prune(), 2u16);
+
+        // equal emission, creation date
+        SubtensorModule::set_emission_values(
+               &[1u16, 2u16, 3u16],
+            vec![5u64, 5u64, 4u64]
+        )
+        .unwrap();
+        assert_eq!(SubtensorModule::get_reserved_subnet_to_prune(), 3u16);
+
+        // equal emission, creation date
+        SubtensorModule::set_emission_values(
+               &[1u16, 2u16, 3u16],
+            vec![4u64, 5u64, 5u64]
+        )
+        .unwrap();
+        assert_eq!(SubtensorModule::get_reserved_subnet_to_prune(), 1u16);
     });
 }
 
@@ -703,8 +773,8 @@ fn test_weights_after_network_pruning() {
                 <<Test as Config>::RuntimeOrigin>::signed(cold),
             ));
 
-            log::debug!("Adding network with netuid: {}", (i as u16) + 1);
-            assert!(SubtensorModule::if_subnet_exist((i as u16) + 1));
+            log::debug!("Adding network with netuid: {}", unid(i as u16 + 1));
+            assert!(SubtensorModule::if_subnet_exist(unid(i as u16 + 1)));
             step_block(3);
         }
 
@@ -723,7 +793,7 @@ fn test_weights_after_network_pruning() {
         ));
 
         // Let's give these subnets some weights
-        let uids: Vec<u16> = (0..(n as u16) + 1).collect();
+        let uids: Vec<u16> = (0..(n as u16) + 1).map(unid_or_zero).collect();
         let values: Vec<u16> = vec![4u16, 2u16, 6u16];
         log::info!("uids set: {:?}", uids);
         log::info!("values set: {:?}", values);
@@ -747,10 +817,10 @@ fn test_weights_after_network_pruning() {
         let cold: U256 = U256::from(i);
 
         SubtensorModule::add_balance_to_coldkey_account(&cold, 1_000_000_000_000_000_000);
-        let subnet_to_prune = SubtensorModule::get_subnet_to_prune();
+        let subnet_to_prune = SubtensorModule::get_user_subnet_to_prune();
 
-        // Subnet 1 should be pruned here.
-        assert_eq!(subnet_to_prune, 1);
+        // User subnet 1 should be pruned here.
+        assert_eq!(subnet_to_prune, unid(1));
         log::info!("Removing subnet: {:?}", subnet_to_prune);
 
         // Check that the weights have been set appropriately.
@@ -764,7 +834,7 @@ fn test_weights_after_network_pruning() {
         ));
 
         // Subnet should not exist, as it would replace a previous subnet.
-        assert!(!SubtensorModule::if_subnet_exist(i + 1));
+        assert!(!SubtensorModule::if_subnet_exist(unid(i + 1)));
 
         log::info!(
             "Root network weights: {:?}",
@@ -1014,7 +1084,8 @@ fn test_user_add_network_with_identity_fields_ok() {
 
         assert_ok!(SubtensorModule::user_add_network(
             RuntimeOrigin::signed(coldkey_1),
-            Some(identity_value_1.clone())
+            Some(identity_value_1.clone()),
+            false,
         ));
 
         let balance_2 = SubtensorModule::get_network_lock_cost() + 10_000;
@@ -1022,28 +1093,33 @@ fn test_user_add_network_with_identity_fields_ok() {
 
         assert_ok!(SubtensorModule::user_add_network(
             RuntimeOrigin::signed(coldkey_2),
-            Some(identity_value_2.clone())
+            Some(identity_value_2.clone()),
+            false,
         ));
 
-        let stored_identity_1: SubnetIdentity = SubnetIdentities::<Test>::get(1).unwrap();
+        let reserved_subnet_count = FirstReservedNetuids::<Test>::get();
+        // after_reserved_netuid
+        let arid = |id| id + reserved_subnet_count;
+
+        let stored_identity_1: SubnetIdentity = SubnetIdentities::<Test>::get(arid(1)).unwrap();
         assert_eq!(stored_identity_1.subnet_name, subnet_name_1);
         assert_eq!(stored_identity_1.github_repo, github_repo_1);
         assert_eq!(stored_identity_1.subnet_contact, subnet_contact_1);
 
-        let stored_identity_2: SubnetIdentity = SubnetIdentities::<Test>::get(2).unwrap();
+        let stored_identity_2: SubnetIdentity = SubnetIdentities::<Test>::get(arid(2)).unwrap();
         assert_eq!(stored_identity_2.subnet_name, subnet_name_2);
         assert_eq!(stored_identity_2.github_repo, github_repo_2);
         assert_eq!(stored_identity_2.subnet_contact, subnet_contact_2);
 
         // Now remove the first network.
-        assert_ok!(SubtensorModule::user_remove_network(coldkey_1, 1));
+        assert_ok!(SubtensorModule::user_remove_network(coldkey_1, arid(1)));
 
         // Verify that the first network and identity have been removed.
-        assert!(SubnetIdentities::<Test>::get(1).is_none());
+        assert!(SubnetIdentities::<Test>::get(arid(1)).is_none());
 
         // Ensure the second network and identity are still intact.
         let stored_identity_2_after_removal: SubnetIdentity =
-            SubnetIdentities::<Test>::get(2).unwrap();
+            SubnetIdentities::<Test>::get(arid(2)).unwrap();
         assert_eq!(stored_identity_2_after_removal.subnet_name, subnet_name_2);
         assert_eq!(stored_identity_2_after_removal.github_repo, github_repo_2);
         assert_eq!(

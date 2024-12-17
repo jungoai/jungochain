@@ -876,8 +876,9 @@ fn test_swap_subnet_owner_for_coldkey() {
         SubnetOwner::<Test>::insert(netuid1, old_coldkey);
         SubnetOwner::<Test>::insert(netuid2, old_coldkey);
 
-        // Set up TotalNetworks
-        TotalNetworks::<Test>::put(3);
+        // Set up total subnets
+        SubtensorModule::increment_total_subnets(netuid1);
+        SubtensorModule::increment_total_subnets(netuid2);
 
         // Perform the swap
         SubtensorModule::perform_swap_coldkey(&old_coldkey, &new_coldkey, &mut weight);
@@ -903,8 +904,8 @@ fn test_do_swap_coldkey_with_subnet_ownership() {
         add_network(netuid, 13, 0);
         register_ok_neuron(netuid, hotkey, old_coldkey, 0);
 
-        // Set TotalNetworks because swap relies on it
-        pallet_subtensor::TotalNetworks::<Test>::set(1);
+        // Set total subnets because swap relies on it
+        SubtensorModule::increment_total_subnets(netuid);
 
         SubtensorModule::add_balance_to_coldkey_account(&old_coldkey, stake_amount + swap_cost);
         SubnetOwner::<Test>::insert(netuid, old_coldkey);

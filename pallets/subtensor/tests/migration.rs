@@ -171,7 +171,7 @@ fn test_migrate_total_issuance() {
 fn test_total_issuance_global() {
     new_test_ext(0).execute_with(|| {
         // Initialize network unique identifier and keys for testing.
-        let netuid: u16 = 1; // Network unique identifier set to 1 for testing.
+        let netuid: u16 = unid(1); // Network unique identifier set to 1 for testing.
         let coldkey = U256::from(0); // Coldkey initialized to 0, representing an account's public key for non-transactional operations.
         let hotkey = U256::from(0); // Hotkey initialized to 0, representing an account's public key for transactional operations.
         let owner: U256 = U256::from(0);

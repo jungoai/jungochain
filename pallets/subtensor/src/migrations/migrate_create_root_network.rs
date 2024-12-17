@@ -5,6 +5,7 @@ use frame_support::{
     traits::{DefensiveResult, Get},
     weights::Weight,
 };
+use frame_system::Pallet;
 use sp_std::vec::Vec;
 
 // TODO (camfairchild): TEST MIGRATION
@@ -54,8 +55,7 @@ pub fn migrate_create_root_network<T: Config>() -> Weight {
     // Set the root network as added
     NetworksAdded::<T>::insert(root_netuid, true);
 
-    // Increment the total number of networks
-    TotalNetworks::<T>::mutate(|n| *n = n.saturating_add(1));
+    crate::Pallet::<T>::increment_total_subnets(root_netuid);
 
     // Set the maximum number of UIDs to the number of senate members
     MaxAllowedUids::<T>::insert(root_netuid, 64);

@@ -65,8 +65,7 @@ pub fn migrate_delete_subnet_21<T: Config>() -> Weight {
         // Remove netuid from added networks
         NetworksAdded::<T>::remove(netuid);
 
-        // Decrement the network counter
-        TotalNetworks::<T>::mutate(|n| *n = n.saturating_sub(1));
+        Pallet::<T>::decrement_total_subnets(netuid);
 
         // Remove network registration time
         NetworkRegisteredAt::<T>::remove(netuid);

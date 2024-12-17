@@ -123,8 +123,8 @@ mod genesis {
             // Set correct length for Subnet neurons
             SubnetworkN::<T>::insert(netuid, next_uid);
 
-            // --- Increase total network count.
-            TotalNetworks::<T>::mutate(|n| *n = n.saturating_add(1));
+            // Increase total network count.
+            Pallet::<T>::increment_total_subnets(netuid);
 
             // Get the root network uid.
             let root_netuid: u16 = 0;
@@ -132,8 +132,8 @@ mod genesis {
             // Set the root network as added.
             NetworksAdded::<T>::insert(root_netuid, true);
 
-            // Increment the number of total networks.
-            TotalNetworks::<T>::mutate(|n| *n = n.saturating_add(1));
+            // Increase total network count.
+            Pallet::<T>::increment_total_subnets(root_netuid);
 
             // Set the number of validators to 1.
             SubnetworkN::<T>::insert(root_netuid, 0);

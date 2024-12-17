@@ -62,7 +62,7 @@ impl<T: Config> Pallet<T> {
 
         // 9. Update the weight for reading the total networks
         weight.saturating_accrue(
-            T::DbWeight::get().reads((TotalNetworks::<T>::get().saturating_add(1u16)) as u64),
+            T::DbWeight::get().reads((Self::get_num_subnets().saturating_add(1u16)) as u64),
         );
 
         // 10. Get the cost for swapping the key

@@ -47,18 +47,59 @@ impl<T: Config> Pallet<T> {
     /// # Returns:
     /// * 'u16': The total number of subnets.
     ///
+    /// 1 + ReservedSubnetCount + UserSubnetCount
+    // TODO: Change u16 to u32 maybe ?
     pub fn get_num_subnets() -> u16 {
-        TotalNetworks::<T>::get()
+        let root_sn = if HasRootSubnet::<T>::get() == true {
+            1
+        } else {
+            0
+        };
+
+        let resv_sns = ReservedSubnetCount::<T>::get();
+        let user_sns = UserSubnetCount::<T>::get();
+
+        resv_sns.saturating_add(user_sns).saturating_add(root_sn)
     }
 
-    /// Fetches the max number of subnet
+    pub fn increment_total_subnets(netuid: u16) {
+        let first_resv_neuids = FirstReservedNetuids::<T>::get();
+
+        if netuid > first_resv_neuids {
+            UserSubnetCount::<T>::mutate(|n| *n = n.saturating_add(1));
+            TotalNetworks::<T>::mutate(|n| *n = n.saturating_add(1));
+        } else if netuid > 0 {
+            ReservedSubnetCount::<T>::mutate(|n| *n = n.saturating_add(1));
+            TotalNetworks::<T>::mutate(|n| *n = n.saturating_add(1));
+        } else if !HasRootSubnet::<T>::get() {
+            HasRootSubnet::<T>::put(true);
+            TotalNetworks::<T>::mutate(|n| *n = n.saturating_add(1));
+        }
+    }
+
+    pub fn decrement_total_subnets(netuid: u16) {
+        let first_resv_neuids = FirstReservedNetuids::<T>::get();
+
+        if netuid > first_resv_neuids {
+            UserSubnetCount::<T>::mutate(|n: &mut u16| *n = n.saturating_sub(1));
+            TotalNetworks::<T>::mutate(|n: &mut u16| *n = n.saturating_sub(1));
+        } else if netuid > 0 {
+            ReservedSubnetCount::<T>::mutate(|n: &mut u16| *n = n.saturating_sub(1));
+            TotalNetworks::<T>::mutate(|n: &mut u16| *n = n.saturating_sub(1));
+        } else if HasRootSubnet::<T>::get() {
+            HasRootSubnet::<T>::put(false);
+            TotalNetworks::<T>::mutate(|n: &mut u16| *n = n.saturating_sub(1));
+        }
+    }
+
+    /// Fetches the max number of (user) subnet (not reserved subnets)
     ///
     /// This function retrieves the max number of subnet.
     ///
     /// # Returns:
     /// * 'u16': The max number of subnet
     ///
-    pub fn get_max_subnets() -> u16 {
+    pub fn get_max_subnets() -> SubnetCount {
         SubnetLimit::<T>::get()
     }
 
@@ -911,6 +952,7 @@ impl<T: Config> Pallet<T> {
     pub fn user_add_network(
         origin: T::RuntimeOrigin,
         identity: Option<SubnetIdentityOf>,
+        is_reserved: bool,
     ) -> dispatch::DispatchResult {
         // --- 0. Ensure the caller is a signed user.
         let coldkey = ensure_signed(origin)?;
@@ -933,23 +975,45 @@ impl<T: Config> Pallet<T> {
 
         // --- 4. Determine the netuid to register.
         let netuid_to_register: u16 = {
-            log::debug!(
-                "subnet count: {:?}\nmax subnets: {:?}",
-                Self::get_num_subnets(),
-                Self::get_max_subnets()
-            );
-            if Self::get_num_subnets().saturating_sub(1) < Self::get_max_subnets() {
-                // We subtract one because we don't want root subnet to count towards total
-                let mut next_available_netuid = 0;
+            let first_resv_neuids = FirstReservedNetuids::<T>::get();
+
+            let (netuid_from, p) = if is_reserved {
+                let total_reserved_subnets = ReservedSubnetCount::<T>::get();
+
+                log::debug!(
+                    "reserved subnet count: {:?}\nmax reserved subnets: {:?}",
+                    total_reserved_subnets,
+                    first_resv_neuids
+                );
+
+                (1, total_reserved_subnets < first_resv_neuids)
+            } else {
+                let max_user_subnets = Self::get_max_subnets();
+                let total_user_subnets = UserSubnetCount::<T>::get();
+
+                log::debug!(
+                    "user subnet count: {:?}\nmax user subnets: {:?}",
+                    total_user_subnets,
+                    max_user_subnets
+                );
+
+                (first_resv_neuids + 1, total_user_subnets < max_user_subnets)
+            };
+
+            // if Self::get_num_subnets().saturating_sub(1) < Self::get_max_subnets() {
+            if p {
+                let mut next_available_netuid = netuid_from;
                 loop {
-                    next_available_netuid.saturating_inc();
                     if !Self::if_subnet_exist(next_available_netuid) {
                         log::debug!("got subnet id: {:?}", next_available_netuid);
                         break next_available_netuid;
                     }
+                    next_available_netuid.saturating_inc();
                 }
-            } else {
-                let netuid_to_prune = Self::get_subnet_to_prune();
+            }
+            // TODO: consideration about pruning
+            else {
+                let netuid_to_prune = Self::get_subnet_to_prune(is_reserved);
                 ensure!(netuid_to_prune > 0, Error::<T>::AllNetworksInImmunity);
 
                 Self::remove_network(netuid_to_prune);
@@ -971,7 +1035,7 @@ impl<T: Config> Pallet<T> {
 
         // --- 6. Set initial and custom parameters for the network.
         Self::init_new_network(netuid_to_register, 360);
-        log::debug!("init_new_network: {:?}", netuid_to_register,);
+        log::debug!("init_new_network: {:?}", netuid_to_register);
 
         // --- 7. Add the identity if it exists
         if let Some(identity_value) = identity {
@@ -1046,6 +1110,10 @@ impl<T: Config> Pallet<T> {
 
     /// Sets initial and custom parameters for a new network.
     pub fn init_new_network(netuid: u16, tempo: u16) {
+        if netuid == Self::get_root_netuid() {
+            log::info!("Adding root subnet")
+        }
+
         // --- 1. Set network to 0 size.
         SubnetworkN::<T>::insert(netuid, 0);
 
@@ -1059,7 +1127,7 @@ impl<T: Config> Pallet<T> {
         NetworkModality::<T>::insert(netuid, 0);
 
         // --- 5. Increase total network count.
-        TotalNetworks::<T>::mutate(|n| *n = n.saturating_add(1));
+        Self::increment_total_subnets(netuid);
 
         // --- 6. Set all default values **explicitly**.
         Self::set_network_registration_allowed(netuid, true);
@@ -1135,7 +1203,12 @@ impl<T: Config> Pallet<T> {
     /// # Note:
     /// This function does not emit any events, nor does it raise any errors. It silently
     /// returns if any internal checks fail.
+    // TODO: prevent removing netuid 0 (root subnet)
     pub fn remove_network(netuid: u16) {
+        if netuid == Self::get_root_netuid() {
+            log::info!("Removing root subnet")
+        }
+
         // --- 1. Return balance to subnet owner.
         let owner_coldkey: T::AccountId = SubnetOwner::<T>::get(netuid);
         let reserved_amount: u64 = Self::get_subnet_locked_balance(netuid);
@@ -1150,7 +1223,7 @@ impl<T: Config> Pallet<T> {
         NetworksAdded::<T>::remove(netuid);
 
         // --- 5. Decrement the network counter.
-        TotalNetworks::<T>::mutate(|n: &mut u16| *n = n.saturating_sub(1));
+        Self::decrement_total_subnets(netuid);
 
         // --- 6. Remove various network-related storages.
         NetworkRegisteredAt::<T>::remove(netuid);
@@ -1263,6 +1336,14 @@ impl<T: Config> Pallet<T> {
         lock_cost
     }
 
+    pub fn get_user_subnet_to_prune() -> u16 {
+        Self::get_subnet_to_prune(false)
+    }
+
+    pub fn get_reserved_subnet_to_prune() -> u16 {
+        Self::get_subnet_to_prune(true)
+    }
+
     /// This function is used to determine which subnet to prune when the total number of networks has reached the limit.
     /// It iterates over all the networks and finds the oldest subnet with the minimum emission value that is not in the immunity period.
     ///
@@ -1270,20 +1351,25 @@ impl<T: Config> Pallet<T> {
     /// * 'u16':
     ///     - The uid of the network to be pruned.
     ///
-    pub fn get_subnet_to_prune() -> u16 {
+    #[rustfmt::skip]
+    fn get_subnet_to_prune(from_reservations: bool) -> u16 {
         let mut netuids: Vec<u16> = vec![];
         let current_block = Self::get_current_block_as_u64();
 
         // Even if we don't have a root subnet, this still works
         for netuid in NetworksAdded::<T>::iter_keys_from(NetworksAdded::<T>::hashed_key_for(0)) {
-            if current_block.saturating_sub(Self::get_network_registered_block(netuid))
-                < Self::get_network_immunity_period()
-            {
-                continue;
-            }
+            let first_resv_netuids = FirstReservedNetuids::<T>::get();
+
+            let p1 =
+                if from_reservations { netuid <= first_resv_netuids }
+                else                 { netuid >  first_resv_netuids };
+
+            let p2 =
+                current_block.saturating_sub(Self::get_network_registered_block(netuid))
+                >= Self::get_network_immunity_period();
 
             // This iterator seems to return them in order anyways, so no need to sort by key
-            netuids.push(netuid);
+            if p1 && p2 { netuids.push(netuid); }
         }
 
         // Now we sort by emission, and then by subnet creation time.
@@ -1294,11 +1380,9 @@ impl<T: Config> Pallet<T> {
                 Ordering::Equal => {
                     if Self::get_network_registered_block(*b)
                         < Self::get_network_registered_block(*a)
-                    {
-                        Ordering::Less
-                    } else {
-                        Ordering::Equal
-                    }
+                    { Ordering::Less }
+                    else
+                    { Ordering::Equal }
                 }
                 v => v,
             }

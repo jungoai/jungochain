@@ -1489,7 +1489,7 @@ fn test_bonds_with_liquid_alpha() {
 #[test]
 fn test_set_alpha_disabled() {
     new_test_ext(1).execute_with(|| {
-        let netuid: u16 = 1;
+        let netuid: u16 = unid(1);
         let hotkey: U256 = U256::from(1);
         let coldkey: U256 = U256::from(1 + 456);
         let signer = <<Test as Config>::RuntimeOrigin>::signed(coldkey);
@@ -2563,7 +2563,8 @@ fn test_compute_ema_bonds_with_liquid_alpha_sparse_empty() {
 #[test]
 fn test_get_set_alpha() {
     new_test_ext(1).execute_with(|| {
-        let netuid: u16 = 1;
+        let netuid: u16 = unid(1);
+        log::debug!("netuid: {:?}", netuid); // debug
         let alpha_low: u16 = 12_u16;
         let alpha_high: u16 = u16::MAX - 10;
 

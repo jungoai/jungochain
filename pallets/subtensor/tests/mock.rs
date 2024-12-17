@@ -168,6 +168,7 @@ parameter_types! {
     pub const InitialSubnetOwnerCut: u16 = 0; // 0%. 100% of rewards go to validators + miners.
     pub const InitialNetworkLockReductionInterval: u64 = 2; // 2 blocks.
     pub const InitialSubnetLimit: u16 = 10; // Max 10 subnets.
+    pub const InitialFirstReservedNetuids: u16 = 10;
     pub const InitialNetworkRateLimit: u64 = 0;
     pub const InitialTargetStakesPerInterval: u16 = 2;
     pub const InitialKeySwapCost: u64 = 1_000_000_000;
@@ -393,6 +394,7 @@ impl pallet_subtensor::Config for Test {
     type InitialSubnetLimit = InitialSubnetLimit;
     type InitialNetworkRateLimit = InitialNetworkRateLimit;
     type InitialTargetStakesPerInterval = InitialTargetStakesPerInterval;
+    type InitialFirstReservedNetuids = InitialFirstReservedNetuids;
     type KeySwapCost = InitialKeySwapCost;
     type AlphaHigh = InitialAlphaHigh;
     type AlphaLow = InitialAlphaLow;
@@ -611,4 +613,20 @@ pub fn step_rate_limit(transaction_type: &TransactionType, netuid: u16) {
 
     // Step that many blocks
     step_block(limit as u16);
+}
+/// User NetuId
+/// An id after reserved netuids
+#[allow(dead_code)]
+pub fn unid(x: u16) -> u16 {
+    assert_ne!(x, 0); // 0 not acceptable
+    pallet_subtensor::FirstReservedNetuids::<Test>::get() + x
+}
+
+#[allow(dead_code)]
+pub fn unid_or_zero(x: u16) -> u16 {
+    if x == 0 {
+        0
+    } else {
+        unid(x as u16)
+    }
 }
