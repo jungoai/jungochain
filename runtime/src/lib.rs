@@ -167,7 +167,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     //   `spec_version`, and `authoring_version` are the same between Wasm and native.
     // This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
     //   the compatible custom types.
-    spec_version: 212,
+    spec_version: 100,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -197,7 +197,7 @@ pub const MILLISECS_PER_BLOCK: u64 = 12000;
 
 /// Fast blocks for development
 #[cfg(feature = "fast-blocks")]
-pub const MILLISECS_PER_BLOCK: u64 = 1000;
+pub const MILLISECS_PER_BLOCK: u64 = 5000;
 
 // NOTE: Currently it is not possible to change the slot duration after the chain has started.
 //       Attempting to do so will brick block production.
@@ -205,8 +205,8 @@ pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
 
 // Time is measured by number of blocks.
 pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
-pub const HOURS: BlockNumber = MINUTES * 60;
-pub const DAYS: BlockNumber = HOURS * 24;
+pub const HOURS: BlockNumber = 60 * MINUTES;
+pub const DAYS: BlockNumber = 24 * HOURS;
 
 pub const MAXIMUM_BLOCK_WEIGHT: Weight =
     Weight::from_parts(4u64 * WEIGHT_REF_TIME_PER_SECOND, u64::MAX);
@@ -873,8 +873,13 @@ parameter_types! {
     pub const MaxCommitFields			: u32 = 1;
     pub const CommitmentInitialDeposit	: Balance = 0; // Free
     pub const CommitmentFieldDeposit	: Balance = 0; // Free
-    pub const CommitmentRateLimit		: BlockNumber = 100; // Allow commitment every 100 blocks
+    pub const CommitmentRateLimit		: BlockNumber = COMMITMENT_RATE_LIMIT; // Allow commitment every N blocks
 }
+#[cfg(not(feature = "fast-blocks"))]
+pub const COMMITMENT_RATE_LIMIT: BlockNumber = 100;
+#[cfg(feature = "fast-blocks")]
+pub const COMMITMENT_RATE_LIMIT: BlockNumber = 5;
+
 pub struct AllowCommitments;
 impl CanCommit<AccountId> for AllowCommitments {
     #[cfg(not(feature = "runtime-benchmarks"))]
@@ -931,7 +936,7 @@ impl pallet_subtensor::Config for Runtime {
     type InitialMaxBurn 						= SubtensorInitialMaxBurn;
     type InitialMinBurn 						= SubtensorInitialMinBurn;
 	// --
-    type InitialTxRateLimit 					= SubtensorInitialTxRateLimit;
+    type InitialTxRateLimit 					= ConstU64<SUBTENSOR_INITIAL_TX_RATE_LIMIT>;
     type InitialTxDelegateTakeRateLimit 		= SubtensorInitialTxDelegateTakeRateLimit;
     type InitialTxChildKeyTakeRateLimit 		= SubtensorInitialTxChildKeyTakeRateLimit;
     type InitialMaxChildKeyTake 				= SubtensorInitialMaxChildKeyTake;
@@ -943,9 +948,9 @@ impl pallet_subtensor::Config for Runtime {
     type InitialNetworkLockReductionInterval 	= SubtensorInitialNetworkLockReductionInterval;
     type InitialSubnetOwnerCut 					= SubtensorInitialSubnetOwnerCut;
     type InitialSubnetLimit 					= SubtensorInitialSubnetLimit;
-    type InitialFirstReservedNetuids            = ConstU16<100>;
+    type InitialFirstReservedNetuids            = ConstU16<FIRST_RESERVED_NETUIDS>;
     type InitialNetworkRateLimit 				= SubtensorInitialNetworkRateLimit;
-    type InitialTargetStakesPerInterval 		= SubtensorInitialTargetStakesPerInterval;
+    type InitialTargetStakesPerInterval 		= ConstU64<1>;
     type KeySwapCost 							= SubtensorInitialKeySwapCost;
     type AlphaHigh 								= InitialAlphaHigh;
     type AlphaLow 								= InitialAlphaLow;
@@ -955,7 +960,9 @@ impl pallet_subtensor::Config for Runtime {
     type Preimages 								= Preimage;
     type InitialColdkeySwapScheduleDuration 	= InitialColdkeySwapScheduleDuration;
     type InitialDissolveNetworkScheduleDuration = InitialDissolveNetworkScheduleDuration;
-    type RootTempo                              = ConstU16<100>;
+    type RootTempo                              = ConstU16<ROOT_TEMPO>;
+    type DefaultStakeInterval                   = ConstU64<DEFAULT_STAKE_INTERVAL>;
+    type DefaultWeightsSetRateLimit             = ConstU64<DEFAULT_WEIGHTS_SET_RATE_LIMIT>;
 }
 parameter_types! {
     pub const SubtensorInitialRho							: u16 = 10;
@@ -968,7 +975,7 @@ parameter_types! {
     pub const SubtensorInitialValidatorPruneLen				: u64 = 1;
     pub const SubtensorInitialScalingLawPower				: u16 = 50; // 0.5
     pub const SubtensorInitialMaxAllowedValidators			: u16 = 128;
-    pub const SubtensorInitialTempo							: u16 = INITIAL_SUBNET_TEMPO;
+    pub const SubtensorInitialTempo							: u16 = DEFAULT_SUBNET_TEMPO;
     pub const SubtensorInitialDifficulty					: u64 = 10_000_000;
     pub const SubtensorInitialAdjustmentInterval			: u16 = 100;
     pub const SubtensorInitialAdjustmentAlpha				: u64 = 0; // no weight to previous value.
@@ -990,7 +997,6 @@ parameter_types! {
     pub const SubtensorInitialBurn							: u64 = 1_000_000_000; // 1 tao
     pub const SubtensorInitialMinBurn						: u64 = 1_000_000_000; // 1 tao
     pub const SubtensorInitialMaxBurn						: u64 = 100_000_000_000; // 100 tao
-    pub const SubtensorInitialTxRateLimit					: u64 = 1000;
     pub const SubtensorInitialTxDelegateTakeRateLimit		: u64 = 216000; // 30 days at 12 seconds per block
     pub const SubtensorInitialTxChildKeyTakeRateLimit		: u64 = INITIAL_CHILDKEY_TAKE_RATELIMIT;
     pub const SubtensorInitialRAORecycledForRegistration	: u64 = 0; // 0 rao
@@ -999,10 +1005,9 @@ parameter_types! {
     pub const SubtensorInitialMinAllowedUids				: u16 = 128;
     pub const SubtensorInitialMinLockCost					: u64 = 1_000_000_000_000; // 1000 TAO
     pub const SubtensorInitialSubnetOwnerCut				: u16 = 11_796; // 18 percent
-    pub const SubtensorInitialSubnetLimit					: u16 = 20; // bittensor_value was 12;
+    pub const SubtensorInitialSubnetLimit					: u16 = 1024;
     pub const SubtensorInitialNetworkLockReductionInterval	: u64 = 14 * 7200;
     pub const SubtensorInitialNetworkRateLimit				: u64 = 7200;
-    pub const SubtensorInitialTargetStakesPerInterval		: u16 = 1;
     pub const SubtensorInitialKeySwapCost					: u64 = 1_000_000_000;
     pub const InitialAlphaHigh								: u16 = 58982; // Represents 0.9 as per the production default
     pub const InitialAlphaLow								: u16 = 45875; // Represents 0.7 as per the production default
@@ -1013,16 +1018,32 @@ parameter_types! {
     pub const InitialDissolveNetworkScheduleDuration		: BlockNumber = 5 * DAYS;
 }
 #[cfg(not(feature = "fast-blocks"))]
-pub const INITIAL_SUBNET_TEMPO: u16 = 99;
-
+pub const ROOT_TEMPO: u16 = 20 * MINUTES as u16; //100;
 #[cfg(feature = "fast-blocks")]
-pub const INITIAL_SUBNET_TEMPO: u16 = 10;
+pub const ROOT_TEMPO: u16 = 1 * MINUTES as u16;
+
+pub const DEFAULT_SUBNET_TEMPO: u16 = ROOT_TEMPO - 1;
+pub const DEFAULT_STAKE_INTERVAL: u64 = DEFAULT_SUBNET_TEMPO as u64;
 
 #[cfg(not(feature = "fast-blocks"))]
 pub const INITIAL_CHILDKEY_TAKE_RATELIMIT: u64 = 216000; // 30 days at 12 seconds per block
-
 #[cfg(feature = "fast-blocks")]
 pub const INITIAL_CHILDKEY_TAKE_RATELIMIT: u64 = 5;
+
+#[cfg(not(feature = "fast-blocks"))]
+pub const SUBTENSOR_INITIAL_TX_RATE_LIMIT: u64 = 1000;
+#[cfg(feature = "fast-blocks")]
+pub const SUBTENSOR_INITIAL_TX_RATE_LIMIT: u64 = 0;
+
+#[cfg(not(feature = "fast-blocks"))]
+pub const DEFAULT_WEIGHTS_SET_RATE_LIMIT: u64 = 1 * MINUTES as u64;
+#[cfg(feature = "fast-blocks")]
+pub const DEFAULT_WEIGHTS_SET_RATE_LIMIT: u64 = 0;
+
+#[cfg(not(feature = "fast-blocks"))]
+pub const FIRST_RESERVED_NETUIDS: u16 = 1000;
+#[cfg(feature = "fast-blocks")]
+pub const FIRST_RESERVED_NETUIDS: u16 = 100;
 
 type EnsureMajoritySenate =
     pallet_collective::EnsureProportionMoreThan<AccountId, TriumvirateCollective, 1, 2>;

@@ -6,6 +6,7 @@ use super::*;
 #[rustfmt::skip]
 pub fn localnet_config(single_authority: bool) -> Result<ChainSpec, String> {
     let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
+    let account = |x| Ss58Codec::from_ss58check(x).unwrap();
 
     Ok(ChainSpec::builder(
         wasm_binary,
@@ -48,6 +49,13 @@ pub fn localnet_config(single_authority: bool) -> Result<ChainSpec, String> {
             (sr25519_account("Dave")    , 2000_000_000_000u128),
             (sr25519_account("Ferdie")  , 2000_000_000_000u128),
             (sr25519_account("Eve")     , 2000_000_000_000u128),
+
+            // Mohsen's local owner coldkey
+            (account("5CwP1MPnA3vHmqmvzPampZmAg1m7FCaSJ3PnPpCy4wmruAFq"), 5000_000_000_000u128),
+            // Mohsen's local miner coldkey
+            (account("5GbcFmvaUTmfpL6MFfh9Xz7X6bj5cKBXqubgNHhKFiNmwFhy"), 5000_000_000_000u128),
+            // Mohsen's local validator coldkey
+            (account("5HTho5p3HQyuvni13e6qhc5Q8UpQZo6RNfgoxAmo3gcfRrJ8"), 5000_000_000_000u128),
         ],
         // trimvirates
         vec![

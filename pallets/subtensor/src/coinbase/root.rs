@@ -727,9 +727,9 @@ impl<T: Config> Pallet<T> {
             Error::<T>::HotKeyNotRegisteredInSubNet
         );
 
-        // --- 2. Verify the hotkey is NOT already a member of the Senate.
+        // --- 2. Verify the hotkey is NOT already a member of the delegate senate.
         ensure!(
-            !T::SenateMembers::is_member(hotkey),
+            !T::SenateMembers::is_delegate_member(hotkey),
             Error::<T>::HotKeyAlreadyRegisteredInSubNet
         );
 
@@ -978,29 +978,28 @@ impl<T: Config> Pallet<T> {
             let first_resv_neuids = FirstReservedNetuids::<T>::get();
 
             let (netuid_from, p) = if is_reserved {
-                let total_reserved_subnets = ReservedSubnetCount::<T>::get();
+                let resv_subnet_count = ReservedSubnetCount::<T>::get();
 
                 log::debug!(
                     "reserved subnet count: {:?}\nmax reserved subnets: {:?}",
-                    total_reserved_subnets,
+                    resv_subnet_count,
                     first_resv_neuids
                 );
 
-                (1, total_reserved_subnets < first_resv_neuids)
+                (1, resv_subnet_count < first_resv_neuids)
             } else {
                 let max_user_subnets = Self::get_max_subnets();
-                let total_user_subnets = UserSubnetCount::<T>::get();
+                let user_subnet_count = UserSubnetCount::<T>::get();
 
                 log::debug!(
                     "user subnet count: {:?}\nmax user subnets: {:?}",
-                    total_user_subnets,
+                    user_subnet_count,
                     max_user_subnets
                 );
 
-                (first_resv_neuids + 1, total_user_subnets < max_user_subnets)
+                (first_resv_neuids + 1, user_subnet_count < max_user_subnets)
             };
 
-            // if Self::get_num_subnets().saturating_sub(1) < Self::get_max_subnets() {
             if p {
                 let mut next_available_netuid = netuid_from;
                 loop {
@@ -1034,8 +1033,13 @@ impl<T: Config> Pallet<T> {
         Self::set_network_last_lock(actual_lock_amount);
 
         // --- 6. Set initial and custom parameters for the network.
-        Self::init_new_network(netuid_to_register, 360);
-        log::debug!("init_new_network: {:?}", netuid_to_register);
+        let tempo = T::InitialTempo::get();
+        Self::init_new_network(netuid_to_register, tempo);
+        log::debug!(
+            "init_new_network: netuid: {:?}, tempo: {:?}",
+            netuid_to_register,
+            tempo
+        );
 
         // --- 7. Add the identity if it exists
         if let Some(identity_value) = identity {

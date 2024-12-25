@@ -276,10 +276,12 @@ impl<T: Config> Pallet<T> {
             block_number <= current_block_number,
             Error::<T>::InvalidWorkBlock
         );
-        ensure!(
-            current_block_number.saturating_sub(block_number) < 3,
-            Error::<T>::InvalidWorkBlock
-        );
+        if !cfg!(feature = "fast-blocks") {
+            ensure!(
+                current_block_number.saturating_sub(block_number) < 3,
+                Error::<T>::InvalidWorkBlock
+            );
+        }
 
         // --- 8. Ensure the supplied work passes the difficulty.
         let difficulty: U256 = Self::get_difficulty(netuid);
@@ -375,10 +377,12 @@ impl<T: Config> Pallet<T> {
             block_number <= current_block_number,
             Error::<T>::InvalidWorkBlock
         );
-        ensure!(
-            current_block_number.saturating_sub(block_number) < 3,
-            Error::<T>::InvalidWorkBlock
-        );
+        if !cfg!(feature = "fast-blocks") {
+            ensure!(
+                current_block_number.saturating_sub(block_number) < 3,
+                Error::<T>::InvalidWorkBlock
+            );
+        }
 
         // --- 3. Ensure the supplied work passes the difficulty.
         let difficulty: U256 = if !cfg!(feature = "fast-blocks") {

@@ -77,6 +77,7 @@ impl<T: Config> Pallet<T> {
         for netuid in subnets.clone().iter() {
             // --- 4.1 Check to see if the subnet should run its epoch.
             if Self::should_run_epoch(*netuid, current_block) {
+                log::debug!("Starting Tempo of subnet: {:?}", *netuid);
                 // --- 4.2 Drain the subnet emission.
                 let mut subnet_emission: u64 = PendingEmission::<T>::get(*netuid);
                 PendingEmission::<T>::insert(*netuid, 0);
@@ -407,6 +408,7 @@ impl<T: Config> Pallet<T> {
     /// Special case: tempo = 0, the network never runs.
     ///
     pub fn blocks_until_next_epoch(netuid: u16, tempo: u16, block_number: u64) -> u64 {
+        log::debug!("blocks_until_next_epoch: netuid: {netuid}, tempo: {tempo}, block_number: {block_number}");
         if tempo == 0 {
             return u64::MAX;
         }

@@ -436,6 +436,8 @@ impl<T: Config> Pallet<T> {
     ///
     #[allow(clippy::indexing_slicing)]
     pub fn epoch(netuid: u16, rao_emission: u64) -> Vec<(T::AccountId, u64, u64)> {
+        log::debug!("epoch started for netuid: {netuid}");
+
         // Get subnetwork size.
         let n: u16 = Self::get_subnetwork_n(netuid);
         log::trace!("Number of Neurons in Network: {:?}", n);
@@ -782,6 +784,10 @@ impl<T: Config> Pallet<T> {
                     Bonds::<T>::insert(netuid, i as u16, new_empty_bonds_row);
                 }
             });
+
+        log::debug!("server_emission: {:?}", server_emission);
+        log::debug!("validator_emission: {:?}", validator_emission);
+        log::debug!("epoch ending");
 
         // Emission tuples ( hotkeys, server_emission, validator_emission )
         hotkeys

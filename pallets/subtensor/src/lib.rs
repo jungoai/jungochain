@@ -296,7 +296,7 @@ pub mod pallet {
     #[pallet::type_value]
     /// Default stake interval.
     pub fn DefaultStakeInterval<T: Config>() -> u64 {
-        360
+        T::DefaultStakeInterval::get()
     }
     #[pallet::type_value]
     /// Default account linkage
@@ -490,7 +490,7 @@ pub mod pallet {
     #[pallet::type_value]
     /// Default value for weights set rate limit.
     pub fn DefaultWeightsSetRateLimit<T: Config>() -> u64 {
-        100
+        T::DefaultWeightsSetRateLimit::get()
     }
     #[pallet::type_value]
     /// Default block number at registration.

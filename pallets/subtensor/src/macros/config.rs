@@ -219,5 +219,11 @@ mod config {
         /// Root subnet Tempo
         #[pallet::constant]
         type RootTempo: Get<u16>;
+        /// Default Stake Interval
+        #[pallet::constant]
+        type DefaultStakeInterval: Get<u64>;
+        /// Default Weights Set Rate Limit
+        #[pallet::constant]
+        type DefaultWeightsSetRateLimit: Get<u64>;
     }
 }
