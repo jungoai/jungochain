@@ -1,32 +1,32 @@
-```commandline             _      _
-███████╗██╗   ██╗██████╗ ████████╗███████╗███╗   ██╗███████╗ ██████╗ ██████╗
-██╔════╝██║   ██║██╔══██╗╚══██╔══╝██╔════╝████╗  ██║██╔════╝██╔═══██╗██╔══██╗
-███████╗██║   ██║██████╔╝   ██║   █████╗  ██╔██╗ ██║███████╗██║   ██║██████╔╝
-╚════██║██║   ██║██╔══██╗   ██║   ██╔══╝  ██║╚██╗██║╚════██║██║   ██║██╔══██╗
-███████║╚██████╔╝██████╔╝   ██║   ███████╗██║ ╚████║███████║╚██████╔╝██║  ██║
-╚══════╝ ╚═════╝ ╚═════╝    ╚═╝   ╚══════╝╚═╝  ╚═══╝╚══════╝ ╚═════╝ ╚═╝  ╚═╝
+```commandline
+     _                              _           _
+    | |_   _ _ __   __ _  ___   ___| |__   __ _(_)_ __
+ _  | | | | | '_ \ / _` |/ _ \ / __| '_ \ / _` | | '_ \
+| |_| | |_| | | | | (_| | (_) | (__| | | | (_| | | | | |
+ \___/ \__,_|_| |_|\__, |\___/ \___|_| |_|\__,_|_|_| |_|
+                   |___/
 
 ```
 
-# **Subtensor** <!-- omit in toc -->
-[![Discord Chat](https://img.shields.io/discord/308323056592486420.svg)](https://discord.gg/bittensor)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+# **Jungochain** <!-- omit in toc -->
+[![Discord Chat](https://img.shields.io/discord/308323056592486420.svg)](https://discord.gg/jungochain)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://jungoai.xyz/licenses/MIT)
 
-This repository contains Bittensor's substrate-chain. Subtensor contains the trusted logic which:
+This repository contains Jungoai's jungochain. Jungochain contains the trusted logic which:
 
 1. Runs Bittensor's [consensus mechanism](./docs/consensus.md);
 2. Advertises neuron information, IPs, etc., and
-3. Facilitates value transfer via TAO.
+3. Facilitates value transfer via JUNGO.
 
 ## System Requirements
 
 * The binaries in ./bin/release are x86_64 binaries to be used with the Linux kernel.
-* Subtensor needs ~286 MiB to run.
+* Jungochain needs ~286 MiB to run.
 * Architectures other than x86_64 are currently not supported.
 * OSs other than Linux and MacOS are currently not supported.
 
 ## Architectures
-Subtensor support the following architectures:
+Jungochain support the following architectures:
 
 ## Linux x86_64
 Requirements:
@@ -39,87 +39,70 @@ Requirements:
 * MacOS 10.7+ (Lion+)
 
 ## Network requirements
-* Subtensor needs access to the public internet
-* Subtensor runs on ipv4
-* Subtensor listens on the following ports:
-  1) 9944 - Websocket. This port is used by bittensor. It only accepts connections from localhost. Make sure this port is firewalled off from the public domain.
+* Jungochain needs access to the public internet
+* Jungochain runs on ipv4
+* Jungochain listens on the following ports:
+  1) 9944 - Websocket. This port is used by jungo-sdk. It only accepts connections from localhost. Make sure this port is firewalled off from the public domain.
   2) 9933 - RPC. This port is opened, but not used.
-  3) 30333 - p2p socket. This port accepts connections from other subtensor nodes. Make sure your firewall(s) allow incoming traffic to this port.
+  3) 30333 - p2p socket. This port accepts connections from other jungochain nodes. Make sure your firewall(s) allow incoming traffic to this port.
 * It is assumed your default outgoing traffic policy is ACCEPT. If not, make sure outbound traffic to port 30333 is allowed.
 
 ---
 
-## For Subnet Development 
+## For Subnet Development
 
-If you are developing and testing subnet incentive mechanism, you will need to run a local subtensor node. Follow the detailed step-by-step instructions provided in the [**Subtensor Nodes** section in Bittensor Developer Documentation](https://docs.bittensor.com/subtensor-nodes).
+todo
 
 ### Lite node vs Archive node
 
-For an explanation of lite node, archive node and how you can run your local subtensor node in these modes, see [Lite node vs archive node](https://docs.bittensor.com/subtensor-nodes#lite-node-vs-archive-node) section on [Bittensor Developer Docs](https://docs.bittensor.com/).
+todo
 
 ---
 
-## For Subtensor Development
+## For Jungochain Development
 
-### Installation
-First, complete the [basic Rust setup instructions](./docs/rust-setup.md).
+Install Rust:
+- Method 1: through [rust installation doc](https://www.rust-lang.org/tools/install)
+- Method 2: uncomment `rustup` in `flake.nix` file
 
-**Build and Run**
-
-Use Rust's native `cargo` command to build and launch the template node:
+Install Nix:
 
 ```sh
-cargo run --release -- --dev
+curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
 ```
 
-**Build only**
+Then enter to development environment from the root of the project folder (where flake.nix exist):
 
-The above `cargo run` command will perform an initial build and launch the node. Use the following command to build the node
-without launching it:
+```sh
+nix develop
+```
+
+### Build
+
+Use the following command to build the node without launching it:
 
 ```sh
 cargo build --release
 ```
-
-<!--
-
-/** When I ran "cargo doc" it gave me a bunch of errors. And when I did "cargo doc --open" it gave same bunch of errors, and did not open. Also, I don't think the binary is "subtensor". It is "node-subtensor". We should uncomment this section after testing and validating and fixing this section.
-*/
-
-### Embedded Docs
-
-Once the project has been built, the following command can be used to explore all parameters and
-subcommands:
-
-```sh
-./target/release/subtensor -h
-```
--->
-
-## Other ways to launch the node
-
-The above `cargo run` command will launch a temporary node and its state will be discarded after
-you terminate the process. After the project has been built, there are other ways to launch the
-node.
 
 ### Single-Node Development Chain
 
 This command will start the single-node development chain with non-persistent state:
 
 ```bash
-./target/release/subtensor --dev
+./target/release/jungochain --dev
 ```
 
 Purge the development chain's state:
 
 ```bash
-./target/release/subtensor purge-chain --dev
+./target/release/jungochain purge-chain --dev
 ```
 
 Start the development chain with detailed logging:
 
 ```bash
-RUST_BACKTRACE=1 ./target/release/subtensor-ldebug --dev
+RUST_BACKTRACE=1 ./target/release/jungochain-ldebug --dev
 ```
 
 Running debug with logs.
@@ -141,7 +124,7 @@ SKIP_WASM_BUILD=1 \
   **`<package-name>`**
   Available members are found within the project root [`./cargo.toml`](./cargo.toml) file, each
   point to a sub-directory containing a `cargo.toml` file with a `name` defined.  for example,
-  [`node/cargo.toml`](./node/cargo.toml) has a name of `node-subtensor`
+  [`node/cargo.toml`](./node/cargo.toml) has a name of `jungochain-node`
 
 
   **`<test-name>`**
@@ -150,13 +133,13 @@ SKIP_WASM_BUILD=1 \
   named `chain_spec`
 
   **example**
-  All together we can run all tests in `chain_spec` file from `node-subtensor` project via
+  All together we can run all tests in `chain_spec` file from `jungochain-node` project via
 
   ```bash
   skip_wasm_build=1 \
     rust_log=runtime=debug \
     cargo test \
-    --package node-subtensor \
+    --package jungochain-node \
     --test chain_spec \
     -- --color always --nocapture
   ```
@@ -216,7 +199,7 @@ If you want to see the multi-node consensus algorithm in action, refer to our
 A Substrate project such as this consists of a number of components that are spread across a few
 directories.
 
-### Node Capabilities 
+### Node Capabilities
 
 A blockchain node is an application that allows users to participate in a blockchain network.
 Substrate-based blockchain nodes expose a number of capabilities:
@@ -232,7 +215,7 @@ Substrate-based blockchain nodes expose a number of capabilities:
 
 **Directory structure**
 
-There are several files in the [`node`](./node/) directory. Make a note of the following important files: 
+There are several files in the [`node`](./node/) directory. Make a note of the following important files:
 
 - [`chain_spec.rs`](./node/src/chain_spec.rs): A
   [chain specification](https://docs.substrate.io/main-docs/build/chain-spec/) is a
@@ -256,7 +239,7 @@ After the node has been [built](#build), refer to the embedded documentation to 
 capabilities and configuration parameters that it exposes:
 
 ```shell
-./target/release/node-subtensor --help
+./target/release/jungochain-node --help
 ```
 
 ### Runtime
@@ -340,7 +323,3 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-
-## Acknowledgments
-**parralax**
