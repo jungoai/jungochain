@@ -13,8 +13,8 @@ pub use fc_rpc::EthBlockDataCacheTask;
 pub use fc_rpc_core::types::{FeeHistoryCache, FeeHistoryCacheLimit, FilterPool};
 use fc_storage::StorageOverride;
 use jsonrpsee::RpcModule;
-use node_subtensor_runtime::opaque::Block;
-use node_subtensor_runtime::Hash;
+use jungochain_runtime::opaque::Block;
+use jungochain_runtime::Hash;
 use sc_consensus_manual_seal::EngineCommand;
 use sc_network::service::traits::NetworkService;
 use sc_network_sync::SyncingService;
@@ -111,10 +111,10 @@ where
     CIDP: CreateInherentDataProviders<Block, ()> + Send + Clone + 'static,
     CT: fp_rpc::ConvertTransaction<<Block as BlockT>::Extrinsic> + Send + Sync + Clone + 'static,
 {
+    use jungochain_custom_rpc::{JungochainCustom, JungochainCustomApiServer};
     use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
     use sc_consensus_manual_seal::rpc::{ManualSeal, ManualSealApiServer};
     use substrate_frame_rpc_system::{System, SystemApiServer};
-    use subtensor_custom_rpc::{SubtensorCustom, SubtensorCustomApiServer};
 
     let mut module = RpcModule::new(());
     let FullDeps {
@@ -125,7 +125,7 @@ where
     } = deps;
 
     // Custom RPC methods for Paratensor
-    module.merge(SubtensorCustom::new(client.clone()).into_rpc())?;
+    module.merge(JungochainCustom::new(client.clone()).into_rpc())?;
 
     module.merge(System::new(client.clone(), pool.clone()).into_rpc())?;
     module.merge(TransactionPayment::new(client).into_rpc())?;

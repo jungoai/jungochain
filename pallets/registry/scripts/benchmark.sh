@@ -1,5 +1,5 @@
 cargo build --release --features runtime-benchmarks
-./target/production/node-subtensor benchmark pallet \
+./target/production/jungochain-node benchmark pallet \
   --chain=local \
   --pallet=pallet_registry \
   --extrinsic="*" \

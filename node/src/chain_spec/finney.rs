@@ -199,7 +199,7 @@ fn finney_genesis(
                 .collect::<Vec<_>>(),
         },
         "sudo": { "key": Some(<AccountId32 as Ss58Codec>::from_ss58check("5FCM3DBXWiGcwYYQtT8z4ZD93TqYpYxjaAfgv6aMStV1FTCT").unwrap()) },
-        "subtensorModule": {
+        "jungochainModule": {
             "stakes": stakes,
             "balancesIssuance": balances_issuance,
         }

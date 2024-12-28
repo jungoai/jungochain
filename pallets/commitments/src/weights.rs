@@ -8,7 +8,7 @@
 //! WASM-EXECUTION: `Compiled`, CHAIN: `Some("local")`, DB CACHE: `1024`
 
 // Executed Command:
-// ./target/release/node-subtensor
+// ./target/release/jungochain-node
 // benchmark
 // pallet
 // --chain=local

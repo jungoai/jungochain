@@ -38,7 +38,7 @@ function run_command() {
     exit 1
   fi
 
-  # Command to run subtensor
+  # Command to run jungochain
   $F_BIN_PATH \
     --base-path /tmp/blockchain \
     --chain ./raw_spec_finney.json \
@@ -53,7 +53,7 @@ EXEC_TYPE="docker"
 NETWORK="mainnet"
 NODE_TYPE="lite"
 BUILD=""
-BIN_PATH="./target/production/node-subtensor"
+BIN_PATH="./target/production/jungochain-node"
 
 # Getting arguments from user
 while [[ $# -gt 0 ]]; do
@@ -113,7 +113,7 @@ if ! [[ "$NODE_TYPE" =~ ^(lite|archive)$ ]]; then
   exit 1
 fi
 
-# Running subtensor
+# Running jungochain
 case $EXEC_TYPE in
 docker)
   docker compose down --remove-orphans

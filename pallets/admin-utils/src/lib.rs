@@ -26,7 +26,7 @@ pub mod pallet {
 
     /// Configure the pallet by specifying the parameters and types on which it depends.
     #[pallet::config]
-    pub trait Config: frame_system::Config + pallet_subtensor::pallet::Config {
+    pub trait Config: frame_system::Config + pallet_jungochain::pallet::Config {
         /// Because this pallet emits events, it depends on the runtime's definition of an event.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
@@ -88,31 +88,31 @@ pub mod pallet {
 
         /// The extrinsic sets the default take for the network.
         /// It is only callable by the root account.
-        /// The extrinsic will call the Subtensor pallet to set the default take.
+        /// The extrinsic will call the Jungochain pallet to set the default take.
         #[pallet::call_index(1)]
         #[pallet::weight(T::WeightInfo::sudo_set_default_take())]
         pub fn sudo_set_default_take(origin: OriginFor<T>, default_take: u16) -> DispatchResult {
             ensure_root(origin)?;
-            pallet_subtensor::Pallet::<T>::set_max_delegate_take(default_take);
+            pallet_jungochain::Pallet::<T>::set_max_delegate_take(default_take);
             log::debug!("DefaultTakeSet( default_take: {:?} ) ", default_take);
             Ok(())
         }
 
         /// The extrinsic sets the transaction rate limit for the network.
         /// It is only callable by the root account.
-        /// The extrinsic will call the Subtensor pallet to set the transaction rate limit.
+        /// The extrinsic will call the Jungochain pallet to set the transaction rate limit.
         #[pallet::call_index(2)]
         #[pallet::weight((0, DispatchClass::Operational, Pays::No))]
         pub fn sudo_set_tx_rate_limit(origin: OriginFor<T>, tx_rate_limit: u64) -> DispatchResult {
             ensure_root(origin)?;
-            pallet_subtensor::Pallet::<T>::set_tx_rate_limit(tx_rate_limit);
+            pallet_jungochain::Pallet::<T>::set_tx_rate_limit(tx_rate_limit);
             log::debug!("TxRateLimitSet( tx_rate_limit: {:?} ) ", tx_rate_limit);
             Ok(())
         }
 
         /// The extrinsic sets the serving rate limit for a subnet.
         /// It is only callable by the root account or subnet owner.
-        /// The extrinsic will call the Subtensor pallet to set the serving rate limit.
+        /// The extrinsic will call the Jungochain pallet to set the serving rate limit.
         #[pallet::call_index(3)]
         #[pallet::weight(T::WeightInfo::sudo_set_serving_rate_limit())]
         pub fn sudo_set_serving_rate_limit(
@@ -120,9 +120,9 @@ pub mod pallet {
             netuid: u16,
             serving_rate_limit: u64,
         ) -> DispatchResult {
-            pallet_subtensor::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
+            pallet_jungochain::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
 
-            pallet_subtensor::Pallet::<T>::set_serving_rate_limit(netuid, serving_rate_limit);
+            pallet_jungochain::Pallet::<T>::set_serving_rate_limit(netuid, serving_rate_limit);
             log::debug!(
                 "ServingRateLimitSet( serving_rate_limit: {:?} ) ",
                 serving_rate_limit
@@ -132,7 +132,7 @@ pub mod pallet {
 
         /// The extrinsic sets the minimum difficulty for a subnet.
         /// It is only callable by the root account or subnet owner.
-        /// The extrinsic will call the Subtensor pallet to set the minimum difficulty.
+        /// The extrinsic will call the Jungochain pallet to set the minimum difficulty.
         #[pallet::call_index(4)]
         #[pallet::weight(T::WeightInfo::sudo_set_min_difficulty())]
         pub fn sudo_set_min_difficulty(
@@ -140,13 +140,13 @@ pub mod pallet {
             netuid: u16,
             min_difficulty: u64,
         ) -> DispatchResult {
-            pallet_subtensor::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
+            pallet_jungochain::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
 
             ensure!(
-                pallet_subtensor::Pallet::<T>::if_subnet_exist(netuid),
+                pallet_jungochain::Pallet::<T>::if_subnet_exist(netuid),
                 Error::<T>::SubnetDoesNotExist
             );
-            pallet_subtensor::Pallet::<T>::set_min_difficulty(netuid, min_difficulty);
+            pallet_jungochain::Pallet::<T>::set_min_difficulty(netuid, min_difficulty);
             log::debug!(
                 "MinDifficultySet( netuid: {:?} min_difficulty: {:?} ) ",
                 netuid,
@@ -157,7 +157,7 @@ pub mod pallet {
 
         /// The extrinsic sets the maximum difficulty for a subnet.
         /// It is only callable by the root account or subnet owner.
-        /// The extrinsic will call the Subtensor pallet to set the maximum difficulty.
+        /// The extrinsic will call the Jungochain pallet to set the maximum difficulty.
         #[pallet::call_index(5)]
         #[pallet::weight(T::WeightInfo::sudo_set_max_difficulty())]
         pub fn sudo_set_max_difficulty(
@@ -165,13 +165,13 @@ pub mod pallet {
             netuid: u16,
             max_difficulty: u64,
         ) -> DispatchResult {
-            pallet_subtensor::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
+            pallet_jungochain::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
 
             ensure!(
-                pallet_subtensor::Pallet::<T>::if_subnet_exist(netuid),
+                pallet_jungochain::Pallet::<T>::if_subnet_exist(netuid),
                 Error::<T>::SubnetDoesNotExist
             );
-            pallet_subtensor::Pallet::<T>::set_max_difficulty(netuid, max_difficulty);
+            pallet_jungochain::Pallet::<T>::set_max_difficulty(netuid, max_difficulty);
             log::debug!(
                 "MaxDifficultySet( netuid: {:?} max_difficulty: {:?} ) ",
                 netuid,
@@ -182,7 +182,7 @@ pub mod pallet {
 
         /// The extrinsic sets the weights version key for a subnet.
         /// It is only callable by the root account or subnet owner.
-        /// The extrinsic will call the Subtensor pallet to set the weights version key.
+        /// The extrinsic will call the Jungochain pallet to set the weights version key.
         #[pallet::call_index(6)]
         #[pallet::weight(T::WeightInfo::sudo_set_weights_version_key())]
         pub fn sudo_set_weights_version_key(
@@ -190,13 +190,13 @@ pub mod pallet {
             netuid: u16,
             weights_version_key: u64,
         ) -> DispatchResult {
-            pallet_subtensor::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
+            pallet_jungochain::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
 
             ensure!(
-                pallet_subtensor::Pallet::<T>::if_subnet_exist(netuid),
+                pallet_jungochain::Pallet::<T>::if_subnet_exist(netuid),
                 Error::<T>::SubnetDoesNotExist
             );
-            pallet_subtensor::Pallet::<T>::set_weights_version_key(netuid, weights_version_key);
+            pallet_jungochain::Pallet::<T>::set_weights_version_key(netuid, weights_version_key);
             log::debug!(
                 "WeightsVersionKeySet( netuid: {:?} weights_version_key: {:?} ) ",
                 netuid,
@@ -207,7 +207,7 @@ pub mod pallet {
 
         /// The extrinsic sets the weights set rate limit for a subnet.
         /// It is only callable by the root account or subnet owner.
-        /// The extrinsic will call the Subtensor pallet to set the weights set rate limit.
+        /// The extrinsic will call the Jungochain pallet to set the weights set rate limit.
         #[pallet::call_index(7)]
         #[pallet::weight(T::WeightInfo::sudo_set_weights_set_rate_limit())]
         pub fn sudo_set_weights_set_rate_limit(
@@ -215,13 +215,13 @@ pub mod pallet {
             netuid: u16,
             weights_set_rate_limit: u64,
         ) -> DispatchResult {
-            pallet_subtensor::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
+            pallet_jungochain::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
 
             ensure!(
-                pallet_subtensor::Pallet::<T>::if_subnet_exist(netuid),
+                pallet_jungochain::Pallet::<T>::if_subnet_exist(netuid),
                 Error::<T>::SubnetDoesNotExist
             );
-            pallet_subtensor::Pallet::<T>::set_weights_set_rate_limit(
+            pallet_jungochain::Pallet::<T>::set_weights_set_rate_limit(
                 netuid,
                 weights_set_rate_limit,
             );
@@ -235,7 +235,7 @@ pub mod pallet {
 
         /// The extrinsic sets the adjustment interval for a subnet.
         /// It is only callable by the root account, not changeable by the subnet owner.
-        /// The extrinsic will call the Subtensor pallet to set the adjustment interval.
+        /// The extrinsic will call the Jungochain pallet to set the adjustment interval.
         #[pallet::call_index(8)]
         #[pallet::weight(T::WeightInfo::sudo_set_adjustment_interval())]
         pub fn sudo_set_adjustment_interval(
@@ -246,10 +246,10 @@ pub mod pallet {
             ensure_root(origin)?;
 
             ensure!(
-                pallet_subtensor::Pallet::<T>::if_subnet_exist(netuid),
+                pallet_jungochain::Pallet::<T>::if_subnet_exist(netuid),
                 Error::<T>::SubnetDoesNotExist
             );
-            pallet_subtensor::Pallet::<T>::set_adjustment_interval(netuid, adjustment_interval);
+            pallet_jungochain::Pallet::<T>::set_adjustment_interval(netuid, adjustment_interval);
             log::debug!(
                 "AdjustmentIntervalSet( netuid: {:?} adjustment_interval: {:?} ) ",
                 netuid,
@@ -260,7 +260,7 @@ pub mod pallet {
 
         /// The extrinsic sets the adjustment alpha for a subnet.
         /// It is only callable by the root account or subnet owner.
-        /// The extrinsic will call the Subtensor pallet to set the adjustment alpha.
+        /// The extrinsic will call the Jungochain pallet to set the adjustment alpha.
         #[pallet::call_index(9)]
         #[pallet::weight((
             Weight::from_parts(14_000_000, 0)
@@ -274,13 +274,13 @@ pub mod pallet {
             netuid: u16,
             adjustment_alpha: u64,
         ) -> DispatchResult {
-            pallet_subtensor::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
+            pallet_jungochain::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
 
             ensure!(
-                pallet_subtensor::Pallet::<T>::if_subnet_exist(netuid),
+                pallet_jungochain::Pallet::<T>::if_subnet_exist(netuid),
                 Error::<T>::SubnetDoesNotExist
             );
-            pallet_subtensor::Pallet::<T>::set_adjustment_alpha(netuid, adjustment_alpha);
+            pallet_jungochain::Pallet::<T>::set_adjustment_alpha(netuid, adjustment_alpha);
             log::debug!(
                 "AdjustmentAlphaSet( adjustment_alpha: {:?} ) ",
                 adjustment_alpha
@@ -290,7 +290,7 @@ pub mod pallet {
 
         /// The extrinsic sets the adjustment beta for a subnet.
         /// It is only callable by the root account or subnet owner.
-        /// The extrinsic will call the Subtensor pallet to set the adjustment beta.
+        /// The extrinsic will call the Jungochain pallet to set the adjustment beta.
         #[pallet::call_index(12)]
         #[pallet::weight(T::WeightInfo::sudo_set_max_weight_limit())]
         pub fn sudo_set_max_weight_limit(
@@ -298,13 +298,13 @@ pub mod pallet {
             netuid: u16,
             max_weight_limit: u16,
         ) -> DispatchResult {
-            pallet_subtensor::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
+            pallet_jungochain::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
 
             ensure!(
-                pallet_subtensor::Pallet::<T>::if_subnet_exist(netuid),
+                pallet_jungochain::Pallet::<T>::if_subnet_exist(netuid),
                 Error::<T>::SubnetDoesNotExist
             );
-            pallet_subtensor::Pallet::<T>::set_max_weight_limit(netuid, max_weight_limit);
+            pallet_jungochain::Pallet::<T>::set_max_weight_limit(netuid, max_weight_limit);
             log::debug!(
                 "MaxWeightLimitSet( netuid: {:?} max_weight_limit: {:?} ) ",
                 netuid,
@@ -315,7 +315,7 @@ pub mod pallet {
 
         /// The extrinsic sets the immunity period for a subnet.
         /// It is only callable by the root account or subnet owner.
-        /// The extrinsic will call the Subtensor pallet to set the immunity period.
+        /// The extrinsic will call the Jungochain pallet to set the immunity period.
         #[pallet::call_index(13)]
         #[pallet::weight(T::WeightInfo::sudo_set_immunity_period())]
         pub fn sudo_set_immunity_period(
@@ -323,13 +323,13 @@ pub mod pallet {
             netuid: u16,
             immunity_period: u16,
         ) -> DispatchResult {
-            pallet_subtensor::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
+            pallet_jungochain::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
             ensure!(
-                pallet_subtensor::Pallet::<T>::if_subnet_exist(netuid),
+                pallet_jungochain::Pallet::<T>::if_subnet_exist(netuid),
                 Error::<T>::SubnetDoesNotExist
             );
 
-            pallet_subtensor::Pallet::<T>::set_immunity_period(netuid, immunity_period);
+            pallet_jungochain::Pallet::<T>::set_immunity_period(netuid, immunity_period);
             log::debug!(
                 "ImmunityPeriodSet( netuid: {:?} immunity_period: {:?} ) ",
                 netuid,
@@ -340,7 +340,7 @@ pub mod pallet {
 
         /// The extrinsic sets the minimum allowed weights for a subnet.
         /// It is only callable by the root account or subnet owner.
-        /// The extrinsic will call the Subtensor pallet to set the minimum allowed weights.
+        /// The extrinsic will call the Jungochain pallet to set the minimum allowed weights.
         #[pallet::call_index(14)]
         #[pallet::weight(T::WeightInfo::sudo_set_min_allowed_weights())]
         pub fn sudo_set_min_allowed_weights(
@@ -348,13 +348,13 @@ pub mod pallet {
             netuid: u16,
             min_allowed_weights: u16,
         ) -> DispatchResult {
-            pallet_subtensor::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
+            pallet_jungochain::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
 
             ensure!(
-                pallet_subtensor::Pallet::<T>::if_subnet_exist(netuid),
+                pallet_jungochain::Pallet::<T>::if_subnet_exist(netuid),
                 Error::<T>::SubnetDoesNotExist
             );
-            pallet_subtensor::Pallet::<T>::set_min_allowed_weights(netuid, min_allowed_weights);
+            pallet_jungochain::Pallet::<T>::set_min_allowed_weights(netuid, min_allowed_weights);
             log::debug!(
                 "MinAllowedWeightSet( netuid: {:?} min_allowed_weights: {:?} ) ",
                 netuid,
@@ -365,7 +365,7 @@ pub mod pallet {
 
         /// The extrinsic sets the maximum allowed UIDs for a subnet.
         /// It is only callable by the root account.
-        /// The extrinsic will call the Subtensor pallet to set the maximum allowed UIDs for a subnet.
+        /// The extrinsic will call the Jungochain pallet to set the maximum allowed UIDs for a subnet.
         #[pallet::call_index(15)]
         #[pallet::weight(T::WeightInfo::sudo_set_max_allowed_uids())]
         pub fn sudo_set_max_allowed_uids(
@@ -375,14 +375,14 @@ pub mod pallet {
         ) -> DispatchResult {
             ensure_root(origin)?;
             ensure!(
-                pallet_subtensor::Pallet::<T>::if_subnet_exist(netuid),
+                pallet_jungochain::Pallet::<T>::if_subnet_exist(netuid),
                 Error::<T>::SubnetDoesNotExist
             );
             ensure!(
-                pallet_subtensor::Pallet::<T>::get_subnetwork_n(netuid) < max_allowed_uids,
+                pallet_jungochain::Pallet::<T>::get_subnetwork_n(netuid) < max_allowed_uids,
                 Error::<T>::MaxAllowedUIdsLessThanCurrentUIds
             );
-            pallet_subtensor::Pallet::<T>::set_max_allowed_uids(netuid, max_allowed_uids);
+            pallet_jungochain::Pallet::<T>::set_max_allowed_uids(netuid, max_allowed_uids);
             log::debug!(
                 "MaxAllowedUidsSet( netuid: {:?} max_allowed_uids: {:?} ) ",
                 netuid,
@@ -393,41 +393,41 @@ pub mod pallet {
 
         /// The extrinsic sets the kappa for a subnet.
         /// It is only callable by the root account or subnet owner.
-        /// The extrinsic will call the Subtensor pallet to set the kappa.
+        /// The extrinsic will call the Jungochain pallet to set the kappa.
         #[pallet::call_index(16)]
         #[pallet::weight(T::WeightInfo::sudo_set_kappa())]
         pub fn sudo_set_kappa(origin: OriginFor<T>, netuid: u16, kappa: u16) -> DispatchResult {
-            pallet_subtensor::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
+            pallet_jungochain::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
 
             ensure!(
-                pallet_subtensor::Pallet::<T>::if_subnet_exist(netuid),
+                pallet_jungochain::Pallet::<T>::if_subnet_exist(netuid),
                 Error::<T>::SubnetDoesNotExist
             );
-            pallet_subtensor::Pallet::<T>::set_kappa(netuid, kappa);
+            pallet_jungochain::Pallet::<T>::set_kappa(netuid, kappa);
             log::debug!("KappaSet( netuid: {:?} kappa: {:?} ) ", netuid, kappa);
             Ok(())
         }
 
         /// The extrinsic sets the rho for a subnet.
         /// It is only callable by the root account or subnet owner.
-        /// The extrinsic will call the Subtensor pallet to set the rho.
+        /// The extrinsic will call the Jungochain pallet to set the rho.
         #[pallet::call_index(17)]
         #[pallet::weight(T::WeightInfo::sudo_set_rho())]
         pub fn sudo_set_rho(origin: OriginFor<T>, netuid: u16, rho: u16) -> DispatchResult {
-            pallet_subtensor::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
+            pallet_jungochain::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
 
             ensure!(
-                pallet_subtensor::Pallet::<T>::if_subnet_exist(netuid),
+                pallet_jungochain::Pallet::<T>::if_subnet_exist(netuid),
                 Error::<T>::SubnetDoesNotExist
             );
-            pallet_subtensor::Pallet::<T>::set_rho(netuid, rho);
+            pallet_jungochain::Pallet::<T>::set_rho(netuid, rho);
             log::debug!("RhoSet( netuid: {:?} rho: {:?} ) ", netuid, rho);
             Ok(())
         }
 
         /// The extrinsic sets the activity cutoff for a subnet.
         /// It is only callable by the root account or subnet owner.
-        /// The extrinsic will call the Subtensor pallet to set the activity cutoff.
+        /// The extrinsic will call the Jungochain pallet to set the activity cutoff.
         #[pallet::call_index(18)]
         #[pallet::weight(T::WeightInfo::sudo_set_activity_cutoff())]
         pub fn sudo_set_activity_cutoff(
@@ -435,13 +435,13 @@ pub mod pallet {
             netuid: u16,
             activity_cutoff: u16,
         ) -> DispatchResult {
-            pallet_subtensor::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
+            pallet_jungochain::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
 
             ensure!(
-                pallet_subtensor::Pallet::<T>::if_subnet_exist(netuid),
+                pallet_jungochain::Pallet::<T>::if_subnet_exist(netuid),
                 Error::<T>::SubnetDoesNotExist
             );
-            pallet_subtensor::Pallet::<T>::set_activity_cutoff(netuid, activity_cutoff);
+            pallet_jungochain::Pallet::<T>::set_activity_cutoff(netuid, activity_cutoff);
             log::debug!(
                 "ActivityCutoffSet( netuid: {:?} activity_cutoff: {:?} ) ",
                 netuid,
@@ -452,7 +452,7 @@ pub mod pallet {
 
         /// The extrinsic sets the network registration allowed for a subnet.
         /// It is only callable by the root account or subnet owner.
-        /// The extrinsic will call the Subtensor pallet to set the network registration allowed.
+        /// The extrinsic will call the Jungochain pallet to set the network registration allowed.
         #[pallet::call_index(19)]
         #[pallet::weight((
 			Weight::from_parts(4_000_000, 0)
@@ -466,9 +466,9 @@ pub mod pallet {
             netuid: u16,
             registration_allowed: bool,
         ) -> DispatchResult {
-            pallet_subtensor::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
+            pallet_jungochain::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
 
-            pallet_subtensor::Pallet::<T>::set_network_registration_allowed(
+            pallet_jungochain::Pallet::<T>::set_network_registration_allowed(
                 netuid,
                 registration_allowed,
             );
@@ -481,7 +481,7 @@ pub mod pallet {
 
         /// The extrinsic sets the network PoW registration allowed for a subnet.
         /// It is only callable by the root account or subnet owner.
-        /// The extrinsic will call the Subtensor pallet to set the network PoW registration allowed.
+        /// The extrinsic will call the Jungochain pallet to set the network PoW registration allowed.
         #[pallet::call_index(20)]
         #[pallet::weight((
 			Weight::from_parts(14_000_000, 0)
@@ -494,9 +494,9 @@ pub mod pallet {
             netuid: u16,
             registration_allowed: bool,
         ) -> DispatchResult {
-            pallet_subtensor::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
+            pallet_jungochain::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
 
-            pallet_subtensor::Pallet::<T>::set_network_pow_registration_allowed(
+            pallet_jungochain::Pallet::<T>::set_network_pow_registration_allowed(
                 netuid,
                 registration_allowed,
             );
@@ -509,7 +509,7 @@ pub mod pallet {
 
         /// The extrinsic sets the target registrations per interval for a subnet.
         /// It is only callable by the root account.
-        /// The extrinsic will call the Subtensor pallet to set the target registrations per interval.
+        /// The extrinsic will call the Jungochain pallet to set the target registrations per interval.
         #[pallet::call_index(21)]
         #[pallet::weight(T::WeightInfo::sudo_set_target_registrations_per_interval())]
         pub fn sudo_set_target_registrations_per_interval(
@@ -520,10 +520,10 @@ pub mod pallet {
             ensure_root(origin)?;
 
             ensure!(
-                pallet_subtensor::Pallet::<T>::if_subnet_exist(netuid),
+                pallet_jungochain::Pallet::<T>::if_subnet_exist(netuid),
                 Error::<T>::SubnetDoesNotExist
             );
-            pallet_subtensor::Pallet::<T>::set_target_registrations_per_interval(
+            pallet_jungochain::Pallet::<T>::set_target_registrations_per_interval(
                 netuid,
                 target_registrations_per_interval,
             );
@@ -537,7 +537,7 @@ pub mod pallet {
 
         /// The extrinsic sets the minimum burn for a subnet.
         /// It is only callable by the root account or subnet owner.
-        /// The extrinsic will call the Subtensor pallet to set the minimum burn.
+        /// The extrinsic will call the Jungochain pallet to set the minimum burn.
         #[pallet::call_index(22)]
         #[pallet::weight(T::WeightInfo::sudo_set_min_burn())]
         pub fn sudo_set_min_burn(
@@ -545,13 +545,13 @@ pub mod pallet {
             netuid: u16,
             min_burn: u64,
         ) -> DispatchResult {
-            pallet_subtensor::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
+            pallet_jungochain::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
 
             ensure!(
-                pallet_subtensor::Pallet::<T>::if_subnet_exist(netuid),
+                pallet_jungochain::Pallet::<T>::if_subnet_exist(netuid),
                 Error::<T>::SubnetDoesNotExist
             );
-            pallet_subtensor::Pallet::<T>::set_min_burn(netuid, min_burn);
+            pallet_jungochain::Pallet::<T>::set_min_burn(netuid, min_burn);
             log::debug!(
                 "MinBurnSet( netuid: {:?} min_burn: {:?} ) ",
                 netuid,
@@ -562,7 +562,7 @@ pub mod pallet {
 
         /// The extrinsic sets the maximum burn for a subnet.
         /// It is only callable by the root account or subnet owner.
-        /// The extrinsic will call the Subtensor pallet to set the maximum burn.
+        /// The extrinsic will call the Jungochain pallet to set the maximum burn.
         #[pallet::call_index(23)]
         #[pallet::weight(T::WeightInfo::sudo_set_max_burn())]
         pub fn sudo_set_max_burn(
@@ -570,13 +570,13 @@ pub mod pallet {
             netuid: u16,
             max_burn: u64,
         ) -> DispatchResult {
-            pallet_subtensor::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
+            pallet_jungochain::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
 
             ensure!(
-                pallet_subtensor::Pallet::<T>::if_subnet_exist(netuid),
+                pallet_jungochain::Pallet::<T>::if_subnet_exist(netuid),
                 Error::<T>::SubnetDoesNotExist
             );
-            pallet_subtensor::Pallet::<T>::set_max_burn(netuid, max_burn);
+            pallet_jungochain::Pallet::<T>::set_max_burn(netuid, max_burn);
             log::debug!(
                 "MaxBurnSet( netuid: {:?} max_burn: {:?} ) ",
                 netuid,
@@ -587,7 +587,7 @@ pub mod pallet {
 
         /// The extrinsic sets the difficulty for a subnet.
         /// It is only callable by the root account or subnet owner.
-        /// The extrinsic will call the Subtensor pallet to set the difficulty.
+        /// The extrinsic will call the Jungochain pallet to set the difficulty.
         #[pallet::call_index(24)]
         #[pallet::weight(T::WeightInfo::sudo_set_difficulty())]
         pub fn sudo_set_difficulty(
@@ -595,12 +595,12 @@ pub mod pallet {
             netuid: u16,
             difficulty: u64,
         ) -> DispatchResult {
-            pallet_subtensor::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
+            pallet_jungochain::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
             ensure!(
-                pallet_subtensor::Pallet::<T>::if_subnet_exist(netuid),
+                pallet_jungochain::Pallet::<T>::if_subnet_exist(netuid),
                 Error::<T>::SubnetDoesNotExist
             );
-            pallet_subtensor::Pallet::<T>::set_difficulty(netuid, difficulty);
+            pallet_jungochain::Pallet::<T>::set_difficulty(netuid, difficulty);
             log::debug!(
                 "DifficultySet( netuid: {:?} difficulty: {:?} ) ",
                 netuid,
@@ -611,7 +611,7 @@ pub mod pallet {
 
         /// The extrinsic sets the maximum allowed validators for a subnet.
         /// It is only callable by the root account.
-        /// The extrinsic will call the Subtensor pallet to set the maximum allowed validators.
+        /// The extrinsic will call the Jungochain pallet to set the maximum allowed validators.
         #[pallet::call_index(25)]
         #[pallet::weight(T::WeightInfo::sudo_set_max_allowed_validators())]
         pub fn sudo_set_max_allowed_validators(
@@ -621,16 +621,16 @@ pub mod pallet {
         ) -> DispatchResult {
             ensure_root(origin)?;
             ensure!(
-                pallet_subtensor::Pallet::<T>::if_subnet_exist(netuid),
+                pallet_jungochain::Pallet::<T>::if_subnet_exist(netuid),
                 Error::<T>::SubnetDoesNotExist
             );
             ensure!(
                 max_allowed_validators
-                    <= pallet_subtensor::Pallet::<T>::get_max_allowed_uids(netuid),
+                    <= pallet_jungochain::Pallet::<T>::get_max_allowed_uids(netuid),
                 Error::<T>::MaxValidatorsLargerThanMaxUIds
             );
 
-            pallet_subtensor::Pallet::<T>::set_max_allowed_validators(
+            pallet_jungochain::Pallet::<T>::set_max_allowed_validators(
                 netuid,
                 max_allowed_validators,
             );
@@ -644,7 +644,7 @@ pub mod pallet {
 
         /// The extrinsic sets the bonds moving average for a subnet.
         /// It is only callable by the root account or subnet owner.
-        /// The extrinsic will call the Subtensor pallet to set the bonds moving average.
+        /// The extrinsic will call the Jungochain pallet to set the bonds moving average.
         #[pallet::call_index(26)]
         #[pallet::weight(T::WeightInfo::sudo_set_bonds_moving_average())]
         pub fn sudo_set_bonds_moving_average(
@@ -652,13 +652,13 @@ pub mod pallet {
             netuid: u16,
             bonds_moving_average: u64,
         ) -> DispatchResult {
-            pallet_subtensor::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
+            pallet_jungochain::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
 
             ensure!(
-                pallet_subtensor::Pallet::<T>::if_subnet_exist(netuid),
+                pallet_jungochain::Pallet::<T>::if_subnet_exist(netuid),
                 Error::<T>::SubnetDoesNotExist
             );
-            pallet_subtensor::Pallet::<T>::set_bonds_moving_average(netuid, bonds_moving_average);
+            pallet_jungochain::Pallet::<T>::set_bonds_moving_average(netuid, bonds_moving_average);
             log::debug!(
                 "BondsMovingAverageSet( netuid: {:?} bonds_moving_average: {:?} ) ",
                 netuid,
@@ -669,7 +669,7 @@ pub mod pallet {
 
         /// The extrinsic sets the maximum registrations per block for a subnet.
         /// It is only callable by the root account.
-        /// The extrinsic will call the Subtensor pallet to set the maximum registrations per block.
+        /// The extrinsic will call the Jungochain pallet to set the maximum registrations per block.
         #[pallet::call_index(27)]
         #[pallet::weight(T::WeightInfo::sudo_set_max_registrations_per_block())]
         pub fn sudo_set_max_registrations_per_block(
@@ -680,10 +680,10 @@ pub mod pallet {
             ensure_root(origin)?;
 
             ensure!(
-                pallet_subtensor::Pallet::<T>::if_subnet_exist(netuid),
+                pallet_jungochain::Pallet::<T>::if_subnet_exist(netuid),
                 Error::<T>::SubnetDoesNotExist
             );
-            pallet_subtensor::Pallet::<T>::set_max_registrations_per_block(
+            pallet_jungochain::Pallet::<T>::set_max_registrations_per_block(
                 netuid,
                 max_registrations_per_block,
             );
@@ -697,7 +697,7 @@ pub mod pallet {
 
         /// The extrinsic sets the subnet owner cut for a subnet.
         /// It is only callable by the root account.
-        /// The extrinsic will call the Subtensor pallet to set the subnet owner cut.
+        /// The extrinsic will call the Jungochain pallet to set the subnet owner cut.
         #[pallet::call_index(28)]
         #[pallet::weight((
 			Weight::from_parts(14_000_000, 0)
@@ -710,7 +710,7 @@ pub mod pallet {
             subnet_owner_cut: u16,
         ) -> DispatchResult {
             ensure_root(origin)?;
-            pallet_subtensor::Pallet::<T>::set_subnet_owner_cut(subnet_owner_cut);
+            pallet_jungochain::Pallet::<T>::set_subnet_owner_cut(subnet_owner_cut);
             log::debug!(
                 "SubnetOwnerCut( subnet_owner_cut: {:?} ) ",
                 subnet_owner_cut
@@ -720,7 +720,7 @@ pub mod pallet {
 
         /// The extrinsic sets the network rate limit for the network.
         /// It is only callable by the root account.
-        /// The extrinsic will call the Subtensor pallet to set the network rate limit.
+        /// The extrinsic will call the Jungochain pallet to set the network rate limit.
         #[pallet::call_index(29)]
         #[pallet::weight((
 			Weight::from_parts(14_000_000, 0)
@@ -733,30 +733,30 @@ pub mod pallet {
             rate_limit: u64,
         ) -> DispatchResult {
             ensure_root(origin)?;
-            pallet_subtensor::Pallet::<T>::set_network_rate_limit(rate_limit);
+            pallet_jungochain::Pallet::<T>::set_network_rate_limit(rate_limit);
             log::debug!("NetworkRateLimit( rate_limit: {:?} ) ", rate_limit);
             Ok(())
         }
 
         /// The extrinsic sets the tempo for a subnet.
         /// It is only callable by the root account.
-        /// The extrinsic will call the Subtensor pallet to set the tempo.
+        /// The extrinsic will call the Jungochain pallet to set the tempo.
         #[pallet::call_index(30)]
         #[pallet::weight(T::WeightInfo::sudo_set_tempo())]
         pub fn sudo_set_tempo(origin: OriginFor<T>, netuid: u16, tempo: u16) -> DispatchResult {
             ensure_root(origin)?;
             ensure!(
-                pallet_subtensor::Pallet::<T>::if_subnet_exist(netuid),
+                pallet_jungochain::Pallet::<T>::if_subnet_exist(netuid),
                 Error::<T>::SubnetDoesNotExist
             );
-            pallet_subtensor::Pallet::<T>::set_tempo(netuid, tempo);
+            pallet_jungochain::Pallet::<T>::set_tempo(netuid, tempo);
             log::debug!("TempoSet( netuid: {:?} tempo: {:?} ) ", netuid, tempo);
             Ok(())
         }
 
         /// The extrinsic sets the total issuance for the network.
         /// It is only callable by the root account.
-        /// The extrinsic will call the Subtensor pallet to set the issuance for the network.
+        /// The extrinsic will call the Jungochain pallet to set the issuance for the network.
         #[pallet::call_index(33)]
         #[pallet::weight((0, DispatchClass::Operational, Pays::No))]
         pub fn sudo_set_total_issuance(
@@ -765,14 +765,14 @@ pub mod pallet {
         ) -> DispatchResult {
             ensure_root(origin)?;
 
-            pallet_subtensor::Pallet::<T>::set_total_issuance(total_issuance);
+            pallet_jungochain::Pallet::<T>::set_total_issuance(total_issuance);
 
             Ok(())
         }
 
         /// The extrinsic sets the immunity period for the network.
         /// It is only callable by the root account.
-        /// The extrinsic will call the Subtensor pallet to set the immunity period for the network.
+        /// The extrinsic will call the Jungochain pallet to set the immunity period for the network.
         #[pallet::call_index(35)]
         #[pallet::weight((
 			Weight::from_parts(14_000_000, 0)
@@ -786,7 +786,7 @@ pub mod pallet {
         ) -> DispatchResult {
             ensure_root(origin)?;
 
-            pallet_subtensor::Pallet::<T>::set_network_immunity_period(immunity_period);
+            pallet_jungochain::Pallet::<T>::set_network_immunity_period(immunity_period);
 
             log::debug!("NetworkImmunityPeriod( period: {:?} ) ", immunity_period);
 
@@ -795,7 +795,7 @@ pub mod pallet {
 
         /// The extrinsic sets the min lock cost for the network.
         /// It is only callable by the root account.
-        /// The extrinsic will call the Subtensor pallet to set the min lock cost for the network.
+        /// The extrinsic will call the Jungochain pallet to set the min lock cost for the network.
         #[pallet::call_index(36)]
         #[pallet::weight((
 			Weight::from_parts(14_000_000, 0)
@@ -809,7 +809,7 @@ pub mod pallet {
         ) -> DispatchResult {
             ensure_root(origin)?;
 
-            pallet_subtensor::Pallet::<T>::set_network_min_lock(lock_cost);
+            pallet_jungochain::Pallet::<T>::set_network_min_lock(lock_cost);
 
             log::debug!("NetworkMinLockCost( lock_cost: {:?} ) ", lock_cost);
 
@@ -818,7 +818,7 @@ pub mod pallet {
 
         /// The extrinsic sets the subnet limit for the network.
         /// It is only callable by the root account.
-        /// The extrinsic will call the Subtensor pallet to set the subnet limit.
+        /// The extrinsic will call the Jungochain pallet to set the subnet limit.
         #[pallet::call_index(37)]
         #[pallet::weight((
 			Weight::from_parts(14_000_000, 0)
@@ -828,7 +828,7 @@ pub mod pallet {
 		))]
         pub fn sudo_set_subnet_limit(origin: OriginFor<T>, max_subnets: u16) -> DispatchResult {
             ensure_root(origin)?;
-            pallet_subtensor::Pallet::<T>::set_max_subnets(max_subnets);
+            pallet_jungochain::Pallet::<T>::set_max_subnets(max_subnets);
 
             log::debug!("SubnetLimit( max_subnets: {:?} ) ", max_subnets);
 
@@ -837,7 +837,7 @@ pub mod pallet {
 
         /// The extrinsic sets the lock reduction interval for the network.
         /// It is only callable by the root account.
-        /// The extrinsic will call the Subtensor pallet to set the lock reduction interval.
+        /// The extrinsic will call the Jungochain pallet to set the lock reduction interval.
         #[pallet::call_index(38)]
         #[pallet::weight((
 			Weight::from_parts(14_000_000, 0)
@@ -851,7 +851,7 @@ pub mod pallet {
         ) -> DispatchResult {
             ensure_root(origin)?;
 
-            pallet_subtensor::Pallet::<T>::set_lock_reduction_interval(interval);
+            pallet_jungochain::Pallet::<T>::set_lock_reduction_interval(interval);
 
             log::debug!("NetworkLockReductionInterval( interval: {:?} ) ", interval);
 
@@ -860,7 +860,7 @@ pub mod pallet {
 
         /// The extrinsic sets the recycled RAO for a subnet.
         /// It is only callable by the root account.
-        /// The extrinsic will call the Subtensor pallet to set the recycled RAO.
+        /// The extrinsic will call the Jungochain pallet to set the recycled RAO.
         #[pallet::call_index(39)]
         #[pallet::weight((0, DispatchClass::Operational, Pays::No))]
         pub fn sudo_set_rao_recycled(
@@ -870,27 +870,27 @@ pub mod pallet {
         ) -> DispatchResult {
             ensure_root(origin)?;
             ensure!(
-                pallet_subtensor::Pallet::<T>::if_subnet_exist(netuid),
+                pallet_jungochain::Pallet::<T>::if_subnet_exist(netuid),
                 Error::<T>::SubnetDoesNotExist
             );
-            pallet_subtensor::Pallet::<T>::set_rao_recycled(netuid, rao_recycled);
+            pallet_jungochain::Pallet::<T>::set_rao_recycled(netuid, rao_recycled);
             Ok(())
         }
 
         /// The extrinsic sets the weights min stake.
         /// It is only callable by the root account.
-        /// The extrinsic will call the Subtensor pallet to set the weights min stake.
+        /// The extrinsic will call the Jungochain pallet to set the weights min stake.
         #[pallet::call_index(42)]
         #[pallet::weight((0, DispatchClass::Operational, Pays::No))]
         pub fn sudo_set_weights_min_stake(origin: OriginFor<T>, min_stake: u64) -> DispatchResult {
             ensure_root(origin)?;
-            pallet_subtensor::Pallet::<T>::set_weights_min_stake(min_stake);
+            pallet_jungochain::Pallet::<T>::set_weights_min_stake(min_stake);
             Ok(())
         }
 
         /// The extrinsic sets the minimum stake required for nominators.
         /// It is only callable by the root account.
-        /// The extrinsic will call the Subtensor pallet to set the minimum stake required for nominators.
+        /// The extrinsic will call the Jungochain pallet to set the minimum stake required for nominators.
         #[pallet::call_index(43)]
         #[pallet::weight((0, DispatchClass::Operational, Pays::No))]
         pub fn sudo_set_nominator_min_required_stake(
@@ -899,12 +899,12 @@ pub mod pallet {
             min_stake: u64,
         ) -> DispatchResult {
             ensure_root(origin)?;
-            let prev_min_stake = pallet_subtensor::Pallet::<T>::get_nominator_min_required_stake();
+            let prev_min_stake = pallet_jungochain::Pallet::<T>::get_nominator_min_required_stake();
             log::trace!("Setting minimum stake to: {}", min_stake);
-            pallet_subtensor::Pallet::<T>::set_nominator_min_required_stake(min_stake);
+            pallet_jungochain::Pallet::<T>::set_nominator_min_required_stake(min_stake);
             if min_stake > prev_min_stake {
                 log::trace!("Clearing small nominations");
-                pallet_subtensor::Pallet::<T>::clear_small_nominations();
+                pallet_jungochain::Pallet::<T>::clear_small_nominations();
                 log::trace!("Small nominations cleared");
             }
             Ok(())
@@ -912,7 +912,7 @@ pub mod pallet {
 
         /// The extrinsic sets the rate limit for delegate take transactions.
         /// It is only callable by the root account.
-        /// The extrinsic will call the Subtensor pallet to set the rate limit for delegate take transactions.
+        /// The extrinsic will call the Jungochain pallet to set the rate limit for delegate take transactions.
         #[pallet::call_index(45)]
         #[pallet::weight((0, DispatchClass::Operational, Pays::No))]
         pub fn sudo_set_tx_delegate_take_rate_limit(
@@ -920,7 +920,7 @@ pub mod pallet {
             tx_rate_limit: u64,
         ) -> DispatchResult {
             ensure_root(origin)?;
-            pallet_subtensor::Pallet::<T>::set_tx_delegate_take_rate_limit(tx_rate_limit);
+            pallet_jungochain::Pallet::<T>::set_tx_delegate_take_rate_limit(tx_rate_limit);
             log::debug!(
                 "TxRateLimitDelegateTakeSet( tx_delegate_take_rate_limit: {:?} ) ",
                 tx_rate_limit
@@ -930,19 +930,19 @@ pub mod pallet {
 
         /// The extrinsic sets the minimum delegate take.
         /// It is only callable by the root account.
-        /// The extrinsic will call the Subtensor pallet to set the minimum delegate take.
+        /// The extrinsic will call the Jungochain pallet to set the minimum delegate take.
         #[pallet::call_index(46)]
         #[pallet::weight((0, DispatchClass::Operational, Pays::No))]
         pub fn sudo_set_min_delegate_take(origin: OriginFor<T>, take: u16) -> DispatchResult {
             ensure_root(origin)?;
-            pallet_subtensor::Pallet::<T>::set_min_delegate_take(take);
+            pallet_jungochain::Pallet::<T>::set_min_delegate_take(take);
             log::debug!("TxMinDelegateTakeSet( tx_min_delegate_take: {:?} ) ", take);
             Ok(())
         }
 
         /// The extrinsic sets the target stake per interval.
         /// It is only callable by the root account.
-        /// The extrinsic will call the Subtensor pallet to set target stake per interval.
+        /// The extrinsic will call the Jungochain pallet to set target stake per interval.
         #[pallet::call_index(47)]
         #[pallet::weight((0, DispatchClass::Operational, Pays::No))]
         pub fn sudo_set_target_stakes_per_interval(
@@ -950,7 +950,7 @@ pub mod pallet {
             target_stakes_per_interval: u64,
         ) -> DispatchResult {
             ensure_root(origin)?;
-            pallet_subtensor::Pallet::<T>::set_target_stakes_per_interval(
+            pallet_jungochain::Pallet::<T>::set_target_stakes_per_interval(
                 target_stakes_per_interval,
             );
             log::debug!(
@@ -962,7 +962,7 @@ pub mod pallet {
 
         /// The extrinsic enabled/disables commit/reaveal for a given subnet.
         /// It is only callable by the root account or subnet owner.
-        /// The extrinsic will call the Subtensor pallet to set the value.
+        /// The extrinsic will call the Jungochain pallet to set the value.
         #[pallet::call_index(49)]
         #[pallet::weight(T::WeightInfo::sudo_set_commit_reveal_weights_enabled())]
         pub fn sudo_set_commit_reveal_weights_enabled(
@@ -970,14 +970,14 @@ pub mod pallet {
             netuid: u16,
             enabled: bool,
         ) -> DispatchResult {
-            pallet_subtensor::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
+            pallet_jungochain::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
 
             ensure!(
-                pallet_subtensor::Pallet::<T>::if_subnet_exist(netuid),
+                pallet_jungochain::Pallet::<T>::if_subnet_exist(netuid),
                 Error::<T>::SubnetDoesNotExist
             );
 
-            pallet_subtensor::Pallet::<T>::set_commit_reveal_weights_enabled(netuid, enabled);
+            pallet_jungochain::Pallet::<T>::set_commit_reveal_weights_enabled(netuid, enabled);
             log::debug!("ToggleSetWeightsCommitReveal( netuid: {:?} ) ", netuid);
             Ok(())
         }
@@ -998,8 +998,8 @@ pub mod pallet {
             netuid: u16,
             enabled: bool,
         ) -> DispatchResult {
-            pallet_subtensor::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
-            pallet_subtensor::Pallet::<T>::set_liquid_alpha_enabled(netuid, enabled);
+            pallet_jungochain::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
+            pallet_jungochain::Pallet::<T>::set_liquid_alpha_enabled(netuid, enabled);
             log::debug!(
                 "LiquidAlphaEnableToggled( netuid: {:?}, Enabled: {:?} ) ",
                 netuid,
@@ -1017,8 +1017,8 @@ pub mod pallet {
             alpha_low: u16,
             alpha_high: u16,
         ) -> DispatchResult {
-            pallet_subtensor::Pallet::<T>::ensure_subnet_owner_or_root(origin.clone(), netuid)?;
-            pallet_subtensor::Pallet::<T>::do_set_alpha_values(
+            pallet_jungochain::Pallet::<T>::ensure_subnet_owner_or_root(origin.clone(), netuid)?;
+            pallet_jungochain::Pallet::<T>::do_set_alpha_values(
                 origin, netuid, alpha_low, alpha_high,
             )
         }
@@ -1045,7 +1045,7 @@ pub mod pallet {
             emission_tempo: u64,
         ) -> DispatchResult {
             ensure_root(origin)?;
-            pallet_subtensor::Pallet::<T>::set_hotkey_emission_tempo(emission_tempo);
+            pallet_jungochain::Pallet::<T>::set_hotkey_emission_tempo(emission_tempo);
             log::debug!(
                 "HotkeyEmissionTempoSet( emission_tempo: {:?} )",
                 emission_tempo
@@ -1092,7 +1092,7 @@ pub mod pallet {
             ensure_root(origin)?;
 
             // Set the new maximum stake for the specified network
-            pallet_subtensor::Pallet::<T>::set_network_max_stake(netuid, max_stake);
+            pallet_jungochain::Pallet::<T>::set_network_max_stake(netuid, max_stake);
 
             // Log the change
             log::trace!(
@@ -1128,7 +1128,7 @@ pub mod pallet {
             ensure_root(origin)?;
 
             // Set the new duration of schedule coldkey swap
-            pallet_subtensor::Pallet::<T>::set_coldkey_swap_schedule_duration(duration);
+            pallet_jungochain::Pallet::<T>::set_coldkey_swap_schedule_duration(duration);
 
             // Log the change
             log::trace!("ColdkeySwapScheduleDurationSet( duration: {:?} )", duration);
@@ -1160,7 +1160,7 @@ pub mod pallet {
             ensure_root(origin)?;
 
             // Set the duration of schedule dissolve network
-            pallet_subtensor::Pallet::<T>::set_dissolve_network_schedule_duration(duration);
+            pallet_jungochain::Pallet::<T>::set_dissolve_network_schedule_duration(duration);
 
             // Log the change
             log::trace!(
@@ -1194,14 +1194,14 @@ pub mod pallet {
             netuid: u16,
             interval: u64,
         ) -> DispatchResult {
-            pallet_subtensor::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
+            pallet_jungochain::Pallet::<T>::ensure_subnet_owner_or_root(origin, netuid)?;
 
             ensure!(
-                pallet_subtensor::Pallet::<T>::if_subnet_exist(netuid),
+                pallet_jungochain::Pallet::<T>::if_subnet_exist(netuid),
                 Error::<T>::SubnetDoesNotExist
             );
 
-            pallet_subtensor::Pallet::<T>::set_reveal_period(netuid, interval);
+            pallet_jungochain::Pallet::<T>::set_reveal_period(netuid, interval);
             log::debug!(
                 "SetWeightCommitInterval( netuid: {:?}, interval: {:?} ) ",
                 netuid,

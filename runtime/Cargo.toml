@@ -1,13 +1,13 @@
 [package]
-name = "node-subtensor-runtime"
-version = "4.0.0-dev"
-description = "Subtensor network"
-authors = ["Opentensor Foundation <https://github.com/opentensor/>"]
-homepage = "https://opentensor.ai/"
+name = "jungochain-runtime"
+version = "0.1.0-dev"
+description = "Jungochain network"
+authors = [""] # TODO
+homepage = "https://jungoai.xyz/"
 edition = "2021"
 license = "Unlicense"
 publish = false
-repository = "https://github.com/opentensor/subtensor/"
+repository = "https://github.com/jungoai/jungochain"
 
 [lints]
 workspace = true
@@ -22,7 +22,7 @@ path = "src/spec_version.rs"
 [dependencies]
 ed25519-dalek = { workspace = true, default-features = false, features = ["alloc"] }
 subtensor-macros.workspace = true
-subtensor-custom-rpc-runtime-api = { path = "../pallets/subtensor/runtime-api", default-features = false }
+jungochain-custom-rpc-runtime-api = { path = "../pallets/jungochain/runtime-api", default-features = false }
 smallvec = { workspace = true }
 log = { workspace = true }
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = [
@@ -32,7 +32,7 @@ scale-info = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true, features = ["alloc"] }
 pallet-aura = { workspace = true }
 pallet-balances = { workspace = true }
-pallet-subtensor = { default-features = false, path = "../pallets/subtensor" }
+pallet-jungochain = { default-features = false, path = "../pallets/jungochain" }
 frame-support = { workspace = true }
 pallet-grandpa = { workspace = true }
 pallet-insecure-randomness-collective-flip = { workspace = true }
@@ -80,7 +80,7 @@ pallet-preimage = { workspace = true }
 
 pallet-safe-mode = { workspace = true }
 
-# Used for the node subtensor's RPCs
+# Used for the node jungochain's RPCs
 frame-system-rpc-runtime-api = { workspace = true }
 pallet-transaction-payment-rpc-runtime-api = { workspace = true }
 
@@ -121,9 +121,9 @@ substrate-wasm-builder = { workspace = true, optional = true }
 
 [features]
 default = ["std"]
-pow-faucet = ["pallet-subtensor/pow-faucet"]
+pow-faucet = ["pallet-jungochain/pow-faucet"]
 fast-blocks = [
-	"pallet-subtensor/fast-blocks"
+	"pallet-jungochain/fast-blocks"
 ]
 std = [
 	"frame-try-runtime?/std",
@@ -138,7 +138,7 @@ std = [
 	"frame-system-rpc-runtime-api/std",
 	"frame-system/std",
 	"frame-try-runtime/std",
-	"pallet-subtensor/std",
+	"pallet-jungochain/std",
 	"pallet-aura/std",
 	"pallet-balances/std",
 	"pallet-grandpa/std",
@@ -170,7 +170,7 @@ std = [
 	"pallet-membership/std",
 	"pallet-registry/std",
 	"pallet-admin-utils/std",
-	"subtensor-custom-rpc-runtime-api/std",
+	"jungochain-custom-rpc-runtime-api/std",
 	"serde_json/std",
 	"sp-io/std",
 	"sp-tracing/std",
@@ -204,7 +204,7 @@ runtime-benchmarks = [
 	"pallet-utility/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 	"pallet-safe-mode/runtime-benchmarks",
-	"pallet-subtensor/runtime-benchmarks",
+	"pallet-jungochain/runtime-benchmarks",
 	"pallet-collective/runtime-benchmarks",
 	"pallet-membership/runtime-benchmarks",
 	"pallet-proxy/runtime-benchmarks",
@@ -236,7 +236,7 @@ try-runtime = [
 	"pallet-transaction-payment/try-runtime",
 	"pallet-utility/try-runtime",
 	"pallet-safe-mode/try-runtime",
-	"pallet-subtensor/try-runtime",
+	"pallet-jungochain/try-runtime",
 	"pallet-collective/try-runtime",
 	"pallet-membership/try-runtime",
 	"pallet-proxy/try-runtime",

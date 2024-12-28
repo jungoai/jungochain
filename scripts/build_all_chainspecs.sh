@@ -3,7 +3,7 @@
 set -e
 
 echo "*** Building node..."
-cargo build -p node-subtensor
+cargo build -p jungochain-node
 
 echo "*** Building new chainspecs..."
 
@@ -17,11 +17,11 @@ jq -r ".genesis" raw_spec_finney.json >"$finney_genesis_temp"
 jq -r ".genesis" raw_spec_testfinney.json >"$testfinney_genesis_temp"
 
 # Build new chainspecs
-./target/debug/node-subtensor build-spec --raw --chain finney >"$raw_spec_finney_temp"
-./target/debug/node-subtensor build-spec --chain finney >plain_spec_finney.json
+./target/debug/jungochain-node build-spec --raw --chain finney >"$raw_spec_finney_temp"
+./target/debug/jungochain-node build-spec --chain finney >plain_spec_finney.json
 
-./target/debug/node-subtensor build-spec --raw --chain test_finney >"$raw_spec_testfinney_temp"
-./target/debug/node-subtensor build-spec --chain test_finney >plain_spec_testfinney.json
+./target/debug/jungochain-node build-spec --raw --chain test_finney >"$raw_spec_testfinney_temp"
+./target/debug/jungochain-node build-spec --chain test_finney >plain_spec_testfinney.json
 
 echo "*** Updating genesis..."
 

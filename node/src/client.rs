@@ -1,4 +1,4 @@
-use node_subtensor_runtime::{opaque::Block, RuntimeApi};
+use jungochain_runtime::{opaque::Block, RuntimeApi};
 use sc_executor::WasmExecutor;
 
 /// Full backend.

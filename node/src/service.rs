@@ -1,7 +1,7 @@
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
 use futures::{channel::mpsc, future, FutureExt};
-use node_subtensor_runtime::{opaque::Block, RuntimeApi, TransactionConverter};
+use jungochain_runtime::{opaque::Block, RuntimeApi, TransactionConverter};
 use sc_client_api::{Backend as BackendT, BlockBackend};
 use sc_consensus::{BasicQueue, BoxBlockImport};
 use sc_consensus_grandpa::BlockNumberOps;
@@ -669,7 +669,7 @@ fn run_manual_seal_authorship(
         ) -> Result<(), sp_inherents::Error> {
             TIMESTAMP.with(|x| {
                 let mut x_ref = x.borrow_mut();
-                *x_ref = x_ref.saturating_add(node_subtensor_runtime::SLOT_DURATION);
+                *x_ref = x_ref.saturating_add(jungochain_runtime::SLOT_DURATION);
                 inherent_data.put_data(sp_timestamp::INHERENT_IDENTIFIER, &*x.borrow())
             })
         }

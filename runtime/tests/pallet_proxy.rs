@@ -2,9 +2,9 @@
 
 use codec::Encode;
 use frame_support::{assert_ok, traits::InstanceFilter, BoundedVec};
-use node_subtensor_runtime::{
-    AccountId, BalancesCall, BuildStorage, Proxy, ProxyType, Runtime, RuntimeCall, RuntimeEvent,
-    RuntimeGenesisConfig, RuntimeOrigin, SubtensorModule, System, SystemCall,
+use jungochain_runtime::{
+    AccountId, BalancesCall, BuildStorage, JungochainModule, Proxy, ProxyType, Runtime,
+    RuntimeCall, RuntimeEvent, RuntimeGenesisConfig, RuntimeOrigin, System, SystemCall,
 };
 
 const ACCOUNT: [u8; 32] = [1_u8; 32];
@@ -67,7 +67,7 @@ fn call_owner_util() -> RuntimeCall {
     })
 }
 
-// critical call for Subtensor
+// critical call for Jungochain
 fn call_propose() -> RuntimeCall {
     let proposal = call_remark();
     let proposal_len: u32 = proposal.using_encoded(|p| p.len() as u32);
@@ -79,9 +79,9 @@ fn call_propose() -> RuntimeCall {
     })
 }
 
-// critical call for Subtensor
+// critical call for Jungochain
 fn call_root_register() -> RuntimeCall {
-    RuntimeCall::SubtensorModule(pallet_subtensor::Call::root_register {
+    RuntimeCall::JungochainModule(pallet_jungochain::Call::root_register {
         hotkey: AccountId::from(ACCOUNT),
     })
 }
@@ -103,7 +103,7 @@ fn call_senate() -> RuntimeCall {
 // staking call
 fn call_add_stake() -> RuntimeCall {
     let amount_staked = 100;
-    RuntimeCall::SubtensorModule(pallet_subtensor::Call::add_stake {
+    RuntimeCall::JungochainModule(pallet_jungochain::Call::add_stake {
         hotkey: AccountId::from(DELEGATE),
         amount_staked,
     })
@@ -115,16 +115,16 @@ fn call_register() -> RuntimeCall {
     let netuid: u16 = 2;
 
     // lower diff first
-    SubtensorModule::set_difficulty(netuid, 100);
+    JungochainModule::set_difficulty(netuid, 100);
 
-    let (nonce, work): (u64, Vec<u8>) = SubtensorModule::create_work_for_block_number(
+    let (nonce, work): (u64, Vec<u8>) = JungochainModule::create_work_for_block_number(
         netuid,
         block_number,
         0,
         &AccountId::from(ACCOUNT),
     );
 
-    RuntimeCall::SubtensorModule(pallet_subtensor::Call::register {
+    RuntimeCall::JungochainModule(pallet_jungochain::Call::register {
         netuid,
         block_number,
         nonce,

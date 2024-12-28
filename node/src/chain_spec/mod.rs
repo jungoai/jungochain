@@ -6,7 +6,7 @@ pub mod finney;
 pub mod localnet;
 pub mod testnet;
 
-use node_subtensor_runtime::{AccountId, Block, Signature, WASM_BINARY};
+use jungochain_runtime::{AccountId, Block, Signature, WASM_BINARY};
 use sc_chain_spec_derive::ChainSpecExtension;
 use sc_service::ChainType;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;

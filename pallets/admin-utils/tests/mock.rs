@@ -26,16 +26,16 @@ frame_support::construct_runtime!(
         System: frame_system = 1,
         Balances: pallet_balances = 2,
         AdminUtils: pallet_admin_utils = 3,
-        SubtensorModule: pallet_subtensor::{Pallet, Call, Storage, Event<T>, Error<T>} = 4,
+        JungochainModule: pallet_jungochain::{Pallet, Call, Storage, Event<T>, Error<T>} = 4,
         Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 5,
     }
 );
 
 #[allow(dead_code)]
-pub type SubtensorCall = pallet_subtensor::Call<Test>;
+pub type JungochainCall = pallet_jungochain::Call<Test>;
 
 #[allow(dead_code)]
-pub type SubtensorEvent = pallet_subtensor::Event<Test>;
+pub type JungochainEvent = pallet_jungochain::Event<Test>;
 
 #[allow(dead_code)]
 pub type BalanceCall = pallet_balances::Call<Test>;
@@ -127,7 +127,7 @@ parameter_types! {
     pub const InitialDissolveNetworkScheduleDuration: u64 = 5 * 24 * 60 * 60 / 12; // 5 days
 }
 
-impl pallet_subtensor::Config for Test {
+impl pallet_jungochain::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
     type Currency = Balances;
@@ -286,11 +286,11 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 #[allow(dead_code)]
 pub(crate) fn run_to_block(n: u64) {
     while System::block_number() < n {
-        SubtensorModule::on_finalize(System::block_number());
+        JungochainModule::on_finalize(System::block_number());
         System::on_finalize(System::block_number());
         System::set_block_number(System::block_number() + 1);
         System::on_initialize(System::block_number());
-        SubtensorModule::on_initialize(System::block_number());
+        JungochainModule::on_initialize(System::block_number());
     }
 }
 
@@ -301,14 +301,14 @@ pub fn register_ok_neuron(
     coldkey_account_id: U256,
     start_nonce: u64,
 ) {
-    let block_number: u64 = SubtensorModule::get_current_block_as_u64();
-    let (nonce, work): (u64, Vec<u8>) = SubtensorModule::create_work_for_block_number(
+    let block_number: u64 = JungochainModule::get_current_block_as_u64();
+    let (nonce, work): (u64, Vec<u8>) = JungochainModule::create_work_for_block_number(
         netuid,
         block_number,
         start_nonce,
         &hotkey_account_id,
     );
-    let result = SubtensorModule::register(
+    let result = JungochainModule::register(
         <<Test as frame_system::Config>::RuntimeOrigin>::signed(hotkey_account_id),
         netuid,
         block_number,
@@ -328,7 +328,7 @@ pub fn register_ok_neuron(
 
 #[allow(dead_code)]
 pub fn add_network(netuid: u16, tempo: u16) {
-    SubtensorModule::init_new_network(netuid, tempo);
-    SubtensorModule::set_network_registration_allowed(netuid, true);
-    SubtensorModule::set_network_pow_registration_allowed(netuid, true);
+    JungochainModule::init_new_network(netuid, tempo);
+    JungochainModule::set_network_registration_allowed(netuid, true);
+    JungochainModule::set_network_pow_registration_allowed(netuid, true);
 }

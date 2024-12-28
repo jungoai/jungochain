@@ -7,7 +7,7 @@ use crate::{
 use fc_db::{kv::frontier_database_dir, DatabaseSource};
 
 use futures::TryFutureExt;
-use node_subtensor_runtime::Block;
+use jungochain_runtime::Block;
 use sc_cli::SubstrateCli;
 use sc_service::{
     config::{ExecutorConfiguration, RpcConfiguration},
@@ -16,7 +16,7 @@ use sc_service::{
 
 impl SubstrateCli for Cli {
     fn impl_name() -> String {
-        "Subtensor Node".into()
+        "Jungochain Node".into()
     }
 
     fn impl_version() -> String {
@@ -162,7 +162,7 @@ pub fn run() -> sc_cli::Result<()> {
             use frame_benchmarking_cli::{
                 BenchmarkCmd, ExtrinsicFactory, SUBSTRATE_REFERENCE_HARDWARE,
             };
-            use node_subtensor_runtime::EXISTENTIAL_DEPOSIT;
+            use jungochain_runtime::EXISTENTIAL_DEPOSIT;
             use sc_service::PartialComponents;
             use sp_keyring::Sr25519Keyring;
             use sp_runtime::traits::HashingFor;

@@ -1,0 +1,42 @@
+[package]
+name        = "jungochain-custom-rpc"
+version     = "0.1.0"
+edition     = "2021"
+authors     = ['Cameron Fairchild <https://github.com/camfairchild>']
+repository  = 'https://github.com/jungoai/jungochain'
+description = "A pallet that adds custom RPC calls to jungochain"
+license     = "MIT"
+publish     = false
+
+[lints]
+workspace = true
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = [
+  "derive",
+] }
+jsonrpsee   = { workspace = true, features = ["client-core", "server", "macros"] }
+serde       = { workspace = true, features = ["derive"] }
+
+# Substrate packages
+sp-api          = { workspace = true }
+sp-blockchain   = { workspace = true }
+sp-rpc          = { workspace = true }
+sp-runtime      = { workspace = true }
+
+# local packages
+
+jungochain-custom-rpc-runtime-api = { path = "../runtime-api", default-features = false }
+pallet-jungochain = { path = "../../jungochain", default-features = false }
+
+[features]
+default = ["std"]
+std = [
+	"sp-api/std",
+	"sp-runtime/std",
+	"jungochain-custom-rpc-runtime-api/std",
+	"pallet-jungochain/std",
+	"codec/std",
+	"serde/std"
+]
+pow-faucet = []

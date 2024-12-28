@@ -4,9 +4,9 @@
 
 use crate::client::FullClient;
 
-use node_subtensor_runtime as runtime;
-use node_subtensor_runtime::check_nonce;
-use node_subtensor_runtime::pallet_subtensor;
+use jungochain_runtime as runtime;
+use jungochain_runtime::check_nonce;
+use jungochain_runtime::pallet_jungochain;
 use runtime::{AccountId, Balance, BalancesCall, SystemCall};
 use sc_cli::Result;
 use sc_client_api::BlockBackend;
@@ -134,7 +134,7 @@ pub fn create_benchmark_extrinsic(
         check_nonce::CheckNonce::<runtime::Runtime>::from(nonce),
         frame_system::CheckWeight::<runtime::Runtime>::new(),
         pallet_transaction_payment::ChargeTransactionPayment::<runtime::Runtime>::from(0),
-        pallet_subtensor::SubtensorSignedExtension::<runtime::Runtime>::new(),
+        pallet_jungochain::JungochainSignedExtension::<runtime::Runtime>::new(),
         pallet_commitments::CommitmentsSignedExtension::<runtime::Runtime>::new(),
         frame_metadata_hash_extension::CheckMetadataHash::<runtime::Runtime>::new(true),
     );

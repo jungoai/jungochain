@@ -11,7 +11,7 @@ use fp_rpc::ConvertTransaction;
 use futures::future;
 use futures::StreamExt;
 use jsonrpsee::RpcModule;
-use node_subtensor_runtime::opaque::Block;
+use jungochain_runtime::opaque::Block;
 use sc_client_api::client::BlockchainEvents;
 use sc_network_sync::SyncingService;
 use sc_rpc::SubscriptionTaskExecutor;

@@ -1,13 +1,13 @@
 [package]
-name = "node-subtensor"
-version = "4.0.0-dev"
-description = "A fresh FRAME-based Substrate node, ready for hacking."
-authors = ["Substrate DevHub <https://github.com/substrate-developer-hub>"]
-homepage = "https://substrate.io/"
+name = "jungochain-node"
+version = "0.1.0-dev"
+description = "Jungochain node"
+authors = [""] # TODO
+homepage = "https://jungoai.xyz/"
 edition = "2021"
 license = "Unlicense"
 publish = false
-repository = "https://github.com/opentensor/subtensor"
+repository = "https://github.com/jungoai/jungochain"
 build = "build.rs"
 
 [lints]
@@ -17,7 +17,7 @@ workspace = true
 targets = ["x86_64-unknown-linux-gnu"]
 
 [[bin]]
-name = "node-subtensor"
+name = "jungochain-node"
 
 [dependencies]
 async-trait = { workspace = true }
@@ -64,7 +64,7 @@ frame-system = { workspace = true }
 pallet-transaction-payment = { workspace = true }
 pallet-commitments = { path = "../pallets/commitments" }
 
-# These dependencies are used for the subtensor's RPCs
+# These dependencies are used for the jungochain's RPCs
 jsonrpsee = { workspace = true, features = ["server"] }
 sc-rpc = { workspace = true }
 sp-api = { workspace = true }
@@ -98,16 +98,16 @@ fp-rpc = { workspace = true }
 fc-mapping-sync = { workspace = true }
 
 # Local Dependencies
-node-subtensor-runtime = { path = "../runtime" }
-subtensor-custom-rpc = { path = "../pallets/subtensor/rpc" }
-subtensor-custom-rpc-runtime-api = { path = "../pallets/subtensor/runtime-api" }
+jungochain-runtime = { path = "../runtime" }
+jungochain-custom-rpc = { path = "../pallets/jungochain/rpc" }
+jungochain-custom-rpc-runtime-api = { path = "../pallets/jungochain/runtime-api" }
 
 [build-dependencies]
 substrate-build-script-utils = { workspace = true }
 
 [features]
 default = ["rocksdb", "sql", "txpool"]
-fast-blocks = ["node-subtensor-runtime/fast-blocks"]
+fast-blocks = ["jungochain-runtime/fast-blocks"]
 sql = ["fc-db/sql", "fc-mapping-sync/sql"]
 rocksdb = [
 	"sc-service/rocksdb",
@@ -119,7 +119,7 @@ txpool = ["fc-rpc/txpool", "fc-rpc-core/txpool"]
 
 # Dependencies that are only required if runtime benchmarking should be build.
 runtime-benchmarks = [
-	"node-subtensor-runtime/runtime-benchmarks",
+	"jungochain-runtime/runtime-benchmarks",
 	"frame-benchmarking/runtime-benchmarks",
 	"frame-benchmarking-cli/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
@@ -128,17 +128,17 @@ runtime-benchmarks = [
 	"pallet-commitments/runtime-benchmarks",
 ]
 pow-faucet = [
-    "node-subtensor-runtime/pow-faucet"
+    "jungochain-runtime/pow-faucet"
 ]
 
 # Enable features that allow the runtime to be tried and debugged. Name might be subject to change
 # in the near future.
 try-runtime = [
-	"node-subtensor-runtime/try-runtime",
+	"jungochain-runtime/try-runtime",
 	"frame-system/try-runtime",
 	"pallet-transaction-payment/try-runtime",
 	"sp-runtime/try-runtime",
 	"pallet-commitments/try-runtime",
 ]
 
-metadata-hash = ["node-subtensor-runtime/metadata-hash"]
+metadata-hash = ["jungochain-runtime/metadata-hash"]

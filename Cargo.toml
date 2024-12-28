@@ -1,31 +1,31 @@
 [package]
-name = "subtensor"
-version = "0.1.0"
-description = "Implementation of the bittensor blockchain"
-authors = ["Substrate DevHub <https://github.com/substrate-developer-hub>"]
-homepage = "https://substrate.io/"
-edition = "2021"
-license = "Unlicense"
-publish = false
-repository = "https://github.com/opentensor/subtensor"
+name        = "jungochain"
+version     = "0.1.0"
+description = "Implementation of the jungoai blockchain"
+authors     = ["Substrate DevHub <https://github.com/substrate-developer-hub>"] # TODO
+homepage    = "https://jungoai.xyz/"
+edition     = "2021"
+license     = "Unlicense"
+publish     = false
+repository  = "https://github.com/" # TODO
 
 [dependencies]
-node-subtensor = { path = "node", version = "4.0.0-dev" }
-node-subtensor-runtime = { path = "runtime", version = "4.0.0-dev" }
+jungochain-node    = { path = "node",    version = "0.1.0-dev" }
+jungochain-runtime = { path = "runtime", version = "0.1.0-dev" }
 
 [build-dependencies]
-subtensor-linting = { path = "support/linting", version = "0.1.0" }
-syn.workspace = true
-quote.workspace = true
-proc-macro2.workspace = true
-walkdir.workspace = true
+subtensor-linting       = { path = "support/linting", version = "0.1.0" }
+syn.workspace           = true
+quote.workspace         = true
+proc-macro2.workspace   = true
+walkdir.workspace       = true
 rayon = "1.10"
 
 [workspace]
 members = [
     "node",
     "pallets/commitments",
-    "pallets/subtensor",
+    "pallets/jungochain",
     "pallets/admin-utils",
     "pallets/collective",
     "pallets/registry",
@@ -39,11 +39,11 @@ exclude = ["support/procedural-fork"]
 resolver = "2"
 
 [workspace.lints.clippy]
-indexing-slicing = "deny"
+indexing-slicing        = "deny"
 arithmetic-side-effects = "deny"
-type_complexity = "allow"
-unwrap-used = "deny"
-manual_inspect = "allow"
+type_complexity         = "allow"
+unwrap-used             = "deny"
+manual_inspect          = "allow"
 
 [workspace.dependencies]
 async-trait = "0.1"
@@ -206,11 +206,11 @@ codegen-units = 1
 [features]
 default = []
 try-runtime = [
-    "node-subtensor/try-runtime",
-    "node-subtensor-runtime/try-runtime",
+    "jungochain-node/try-runtime",
+    "jungochain-runtime/try-runtime",
 ]
 runtime-benchmarks = [
-    "node-subtensor/runtime-benchmarks",
-    "node-subtensor-runtime/runtime-benchmarks",
+    "jungochain-node/runtime-benchmarks",
+    "jungochain-runtime/runtime-benchmarks",
 ]
-metadata-hash = ["node-subtensor-runtime/metadata-hash"]
+metadata-hash = ["jungochain-runtime/metadata-hash"]

@@ -67,12 +67,12 @@ $$B_{ij}^{(t)} = \alpha\cdot\Delta B_{ij} + (1-\alpha)\cdot B_{ij}^{(t-1)}\tag{6
 
 
 #### Reward distribution
-Emission ratio $\xi$ decides the ratio of emission for validation rewards, and $1-\xi$ the ratio for server incentive, typically $\xi=0.5$. 
+Emission ratio $\xi$ decides the ratio of emission for validation rewards, and $1-\xi$ the ratio for server incentive, typically $\xi=0.5$.
 $$E_i = \xi \cdot D_i + (1-\xi) \cdot I_i\tag{7}$$
 
 Subnet server incentive $I_j = R_j / \sum_k R_k$ is normalized server rank $R_j = \sum_i S_i \cdot \overline{W_{ij}}$ (sum of consensus-clipped weighted stake).
 
-Validation reward $D_i = \sum_j B_{ij} \cdot I_j$ is the subnet validator's EMA bond with server $j$ multiplied with server $j$ incentive. 
+Validation reward $D_i = \sum_j B_{ij} \cdot I_j$ is the subnet validator's EMA bond with server $j$ multiplied with server $j$ incentive.
 
 
 #### Mathematical definitions
@@ -96,8 +96,8 @@ Validation reward $D_i = \sum_j B_{ij} \cdot I_j$ is the subnet validator's EMA 
 | Emission | $E_i = \xi \cdot D_i + (1-\xi) \cdot I_i$ | Emission for node $i$. |
 
 
-#### Subtensor epoch
-Subtensor blockchain nodes calculate consensus and rewards during each subnet [`epoch`](../pallets/subtensor/src/epoch.rs) with associated code excerpts as follows.
+#### Jungochain epoch
+Jungochain blockchain nodes calculate consensus and rewards during each subnet [`epoch`](../pallets/jungochain/src/epoch.rs) with associated code excerpts as follows.
 ```rust
 let mut weights: Vec<Vec<I32F32>> = Self::get_weights( netuid );  // Weight
 let preranks: Vec<I32F32> = matmul( &weights, &active_stake );  // Server prerank
@@ -136,9 +136,9 @@ Similarly, the specific emission contour plot for $S_H=0.7$, highlights the cont
 A compound plot then combines all the highlighted $S_H=E_H$ contours from individual contour plots (e.g. $S_H=0.6$ and $S_H=0.7$), to show the overall retention profile. Generally, the higher the honest stake, the higher the honest utility requirement to retain stake proportion under adversarial weight setting.
 
 Retention graphs like these comprehensively capture consensus guarantees across all primary conditions, and we utilize these to analyze the effect of consensus hyperparameters.
-Subtensor integration tests run Monte Carlo simulations of large realistic networks under adversarial conditions, and constructs retention profiles to confirm consensus guarantees of the actual blockchain implementation.
+Jungochain integration tests run Monte Carlo simulations of large realistic networks under adversarial conditions, and constructs retention profiles to confirm consensus guarantees of the actual blockchain implementation.
 
-Retention profiles are reproducible by running [`_map_consensus_guarantees`](../pallets/subtensor/tests/epoch.rs) (decorate with `#[test]`).
+Retention profiles are reproducible by running [`_map_consensus_guarantees`](../pallets/jungochain/tests/epoch.rs) (decorate with `#[test]`).
 ```bash
 RUST_BACKTRACE=1 SKIP_WASM_BUILD=1 cargo test -- _map_consensus_guarantees --exact --nocapture > consensus.txt
 ```

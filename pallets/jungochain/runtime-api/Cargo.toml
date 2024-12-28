@@ -1,0 +1,30 @@
+[package]
+name        = "jungochain-custom-rpc-runtime-api"
+version     = "0.0.2"
+edition     = "2021"
+authors     = [''] # TODO
+repository  = 'https://github.com/jungoai/jungochain'
+description = "A pallet that adds a custom runtime API to Jungochain"
+license     = "MIT"
+publish     = false
+
+[lints]
+workspace = true
+
+[dependencies]
+sp-api = { workspace = true }
+frame-support = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+
+# local
+pallet-jungochain = { version = "0.1.0-dev", path = "../../jungochain", default-features = false }
+
+[features]
+default = ["std"]
+std = [
+	"sp-api/std",
+	"frame-support/std",
+	"pallet-jungochain/std",
+	"serde/std"
+]
+pow-faucet = []

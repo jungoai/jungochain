@@ -29,8 +29,8 @@ use pallet_commitments::CanCommit;
 use pallet_grandpa::{
     fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
 };
+use pallet_jungochain::{CollectiveInterface, MemberManagement};
 use pallet_registry::CanRegisterIdentity;
-use pallet_subtensor::{CollectiveInterface, MemberManagement};
 use scale_info::TypeInfo;
 use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
@@ -91,9 +91,9 @@ use pallet_evm::{Account as EVMAccount, BalanceConverter, FeeCalculator, Runner}
 // ----------------------------------------------------------------------------
 // -- Types
 
-// Subtensor module
+// Jungochain module
+pub use pallet_jungochain;
 pub use pallet_scheduler;
-pub use pallet_subtensor;
 
 // An index to a block.
 pub type BlockNumber = u32;
@@ -159,8 +159,8 @@ pub mod opaque {
 // https://docs.substrate.io/main-docs/build/upgrade#runtime-versioning
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-    spec_name: create_runtime_str!("node-subtensor"),
-    impl_name: create_runtime_str!("node-subtensor"),
+    spec_name: create_runtime_str!("jungochain-node"),
+    impl_name: create_runtime_str!("jungochain-node"),
     authoring_version: 1,
     // The version of the runtime specification. A full node will not attempt to use its native
     //   runtime in substitute for the on-chain Wasm runtime unless all of `spec_name`,
@@ -368,9 +368,9 @@ impl Contains<RuntimeCall> for SafeModeWhitelistedCalls {
                 | RuntimeCall::SafeMode(_)
                 | RuntimeCall::Timestamp(_)
                 | RuntimeCall::SubtensorModule(
-                    pallet_subtensor::Call::set_weights { .. }
-                        | pallet_subtensor::Call::set_root_weights { .. }
-                        | pallet_subtensor::Call::serve_axon { .. }
+                    pallet_jungochain::Call::set_weights { .. }
+                        | pallet_jungochain::Call::set_root_weights { .. }
+                        | pallet_jungochain::Call::serve_axon { .. }
                 )
                 | RuntimeCall::Commitments(pallet_commitments::Call::set_commitment { .. })
         )
@@ -417,7 +417,7 @@ parameter_types! {
     pub FeeMultiplier: Multiplier = Multiplier::one();
 }
 
-/// Deduct the transaction fee from the Subtensor Pallet TotalIssuance when dropping the transaction
+/// Deduct the transaction fee from the Jungochain Pallet TotalIssuance when dropping the transaction
 /// fee.
 pub struct TransactionFeeHandler;
 impl
@@ -436,8 +436,8 @@ impl
             IncreaseIssuance<AccountId32, pallet_balances::Pallet<Runtime>>,
         >,
     ) {
-        let ti_before = pallet_subtensor::TotalIssuance::<Runtime>::get();
-        pallet_subtensor::TotalIssuance::<Runtime>::put(ti_before.saturating_sub(credit.peek()));
+        let ti_before = pallet_jungochain::TotalIssuance::<Runtime>::get();
+        pallet_jungochain::TotalIssuance::<Runtime>::put(ti_before.saturating_sub(credit.peek()));
         drop(credit);
     }
 }
@@ -636,14 +636,14 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
             ProxyType::NonFungibile => !matches!(
                 c,
                 RuntimeCall::Balances(..)
-                    | RuntimeCall::SubtensorModule(pallet_subtensor::Call::add_stake { .. })
-                    | RuntimeCall::SubtensorModule(pallet_subtensor::Call::remove_stake { .. })
-                    | RuntimeCall::SubtensorModule(pallet_subtensor::Call::burned_register { .. })
-                    | RuntimeCall::SubtensorModule(pallet_subtensor::Call::root_register { .. })
+                    | RuntimeCall::SubtensorModule(pallet_jungochain::Call::add_stake { .. })
+                    | RuntimeCall::SubtensorModule(pallet_jungochain::Call::remove_stake { .. })
+                    | RuntimeCall::SubtensorModule(pallet_jungochain::Call::burned_register { .. })
+                    | RuntimeCall::SubtensorModule(pallet_jungochain::Call::root_register { .. })
                     | RuntimeCall::SubtensorModule(
-                        pallet_subtensor::Call::schedule_swap_coldkey { .. }
+                        pallet_jungochain::Call::schedule_swap_coldkey { .. }
                     )
-                    | RuntimeCall::SubtensorModule(pallet_subtensor::Call::swap_hotkey { .. })
+                    | RuntimeCall::SubtensorModule(pallet_jungochain::Call::swap_hotkey { .. })
             ),
             ProxyType::Transfer => matches!(
                 c,
@@ -664,11 +664,13 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
             ProxyType::Owner => matches!(c, RuntimeCall::AdminUtils(..)),
             ProxyType::NonCritical => !matches!(
                 c,
-                RuntimeCall::SubtensorModule(pallet_subtensor::Call::dissolve_network { .. })
-                    | RuntimeCall::SubtensorModule(pallet_subtensor::Call::root_register { .. })
-                    | RuntimeCall::SubtensorModule(pallet_subtensor::Call::burned_register { .. })
+                RuntimeCall::SubtensorModule(pallet_jungochain::Call::dissolve_network { .. })
+                    | RuntimeCall::SubtensorModule(pallet_jungochain::Call::root_register { .. })
+                    | RuntimeCall::SubtensorModule(pallet_jungochain::Call::burned_register { .. })
                     | RuntimeCall::Triumvirate(..)
-                    | RuntimeCall::SubtensorModule(pallet_subtensor::Call::set_root_weights { .. })
+                    | RuntimeCall::SubtensorModule(
+                        pallet_jungochain::Call::set_root_weights { .. }
+                    )
                     | RuntimeCall::Sudo(..)
             ),
             ProxyType::Triumvirate => matches!(
@@ -685,23 +687,23 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
             ),
             ProxyType::Staking => matches!(
                 c,
-                RuntimeCall::SubtensorModule(pallet_subtensor::Call::add_stake { .. })
-                    | RuntimeCall::SubtensorModule(pallet_subtensor::Call::remove_stake { .. })
+                RuntimeCall::SubtensorModule(pallet_jungochain::Call::add_stake { .. })
+                    | RuntimeCall::SubtensorModule(pallet_jungochain::Call::remove_stake { .. })
             ),
             ProxyType::Registration => matches!(
                 c,
-                RuntimeCall::SubtensorModule(pallet_subtensor::Call::burned_register { .. })
-                    | RuntimeCall::SubtensorModule(pallet_subtensor::Call::register { .. })
+                RuntimeCall::SubtensorModule(pallet_jungochain::Call::burned_register { .. })
+                    | RuntimeCall::SubtensorModule(pallet_jungochain::Call::register { .. })
             ),
             ProxyType::RootWeights => matches!(
                 c,
-                RuntimeCall::SubtensorModule(pallet_subtensor::Call::set_root_weights { .. })
+                RuntimeCall::SubtensorModule(pallet_jungochain::Call::set_root_weights { .. })
             ),
             ProxyType::ChildKeys => matches!(
                 c,
-                RuntimeCall::SubtensorModule(pallet_subtensor::Call::set_children { .. })
+                RuntimeCall::SubtensorModule(pallet_jungochain::Call::set_children { .. })
                     | RuntimeCall::SubtensorModule(
-                        pallet_subtensor::Call::set_childkey_take { .. }
+                        pallet_jungochain::Call::set_childkey_take { .. }
                     )
             ),
             ProxyType::SudoUncheckedSetCode => match c {
@@ -894,126 +896,80 @@ impl CanCommit<AccountId> for AllowCommitments {
 }
 
 #[rustfmt::skip]
-impl pallet_subtensor::Config for Runtime {
-    type RuntimeEvent 							= RuntimeEvent;
-    type RuntimeCall 							= RuntimeCall;
-    type SudoRuntimeCall 						= RuntimeCall;
-    type Currency 								= Balances;
-    type CouncilOrigin 							= EnsureMajoritySenate;
-    type SenateMembers 							= ManageSenateMembers;
-    type TriumvirateInterface 					= TriumvirateVotes;
-    type Scheduler 								= Scheduler;
-    type InitialIssuance 						= SubtensorInitialIssuance;
-	// -- Per subnet
-    type InitialRho 							= SubtensorInitialRho;
-    type InitialKappa 							= SubtensorInitialKappa;
-    type InitialBondsMovingAverage 				= SubtensorInitialBondsMovingAverage;
-    type InitialMaxAllowedUids 					= SubtensorInitialMaxAllowedUids;
-    type InitialMinAllowedWeights 				= SubtensorInitialMinAllowedWeights;
-    type InitialEmissionValue 					= SubtensorInitialEmissionValue;
-    type InitialMaxWeightsLimit 				= SubtensorInitialMaxWeightsLimit;
-    type InitialValidatorPruneLen 				= SubtensorInitialValidatorPruneLen;
-    type InitialScalingLawPower 				= SubtensorInitialScalingLawPower;
-    type InitialTempo 							= SubtensorInitialTempo;
-    type InitialAdjustmentInterval 				= SubtensorInitialAdjustmentInterval;
-    type InitialAdjustmentAlpha 				= SubtensorInitialAdjustmentAlpha;
-    type InitialTargetRegistrationsPerInterval 	= SubtensorInitialTargetRegistrationsPerInterval;
-    type InitialImmunityPeriod 					= SubtensorInitialImmunityPeriod;
-    type InitialActivityCutoff 					= SubtensorInitialActivityCutoff;
-    type InitialMaxRegistrationsPerBlock 		= SubtensorInitialMaxRegistrationsPerBlock;
-    type InitialMaxAllowedValidators 			= SubtensorInitialMaxAllowedValidators;
-    type InitialPruningScore 					= SubtensorInitialPruningScore;
-    type InitialDefaultDelegateTake 			= SubtensorInitialDefaultTake;
-    type InitialDefaultChildKeyTake 			= SubtensorInitialDefaultChildKeyTake;
-    type InitialMinDelegateTake 				= SubtensorInitialMinDelegateTake;
-    type InitialMinChildKeyTake 				= SubtensorInitialMinChildKeyTake;
-    type InitialWeightsVersionKey 				= SubtensorInitialWeightsVersionKey;
-    type InitialDifficulty 						= SubtensorInitialDifficulty;
-    type InitialMaxDifficulty 					= SubtensorInitialMaxDifficulty;
-    type InitialMinDifficulty 					= SubtensorInitialMinDifficulty;
-    type InitialServingRateLimit 				= SubtensorInitialServingRateLimit;
-    type InitialBurn 							= SubtensorInitialBurn;
-    type InitialMaxBurn 						= SubtensorInitialMaxBurn;
-    type InitialMinBurn 						= SubtensorInitialMinBurn;
-	// --
-    type InitialTxRateLimit 					= ConstU64<SUBTENSOR_INITIAL_TX_RATE_LIMIT>;
-    type InitialTxDelegateTakeRateLimit 		= SubtensorInitialTxDelegateTakeRateLimit;
-    type InitialTxChildKeyTakeRateLimit 		= SubtensorInitialTxChildKeyTakeRateLimit;
-    type InitialMaxChildKeyTake 				= SubtensorInitialMaxChildKeyTake;
-    type InitialRAORecycledForRegistration 		= SubtensorInitialRAORecycledForRegistration;
-    type InitialSenateRequiredStakePercentage 	= SubtensorInitialSenateRequiredStakePercentage;
-    type InitialNetworkImmunityPeriod 			= SubtensorInitialNetworkImmunity;
-    type InitialNetworkMinAllowedUids 			= SubtensorInitialMinAllowedUids;
-    type InitialNetworkMinLockCost 				= SubtensorInitialMinLockCost;
-    type InitialNetworkLockReductionInterval 	= SubtensorInitialNetworkLockReductionInterval;
-    type InitialSubnetOwnerCut 					= SubtensorInitialSubnetOwnerCut;
-    type InitialSubnetLimit 					= SubtensorInitialSubnetLimit;
+impl pallet_jungochain::Config for Runtime {
+    type RuntimeEvent               = RuntimeEvent;
+    type RuntimeCall                = RuntimeCall;
+    type SudoRuntimeCall            = RuntimeCall;
+    type Currency                   = Balances;
+    type CouncilOrigin              = EnsureMajoritySenate;
+    type SenateMembers              = ManageSenateMembers;
+    type TriumvirateInterface       = TriumvirateVotes;
+    type Scheduler                  = Scheduler;
+    type Preimages                  = Preimage;
+    type InitialIssuance            = ConstU64<0>;
+    // -- Per subnet
+    type InitialRho                 = ConstU16<10>;
+    type InitialKappa               = ConstU16<32_767>; // 0.5 = 65535/2
+    type InitialBondsMovingAverage  = ConstU64<900_000>;
+    type InitialMaxAllowedUids      = ConstU16<4096>;
+    type InitialMinAllowedWeights   = ConstU16<1024>;
+    type InitialEmissionValue       = ConstU16<0>;
+    type InitialMaxWeightsLimit     = ConstU16<1000>; // 1000/2^16 = 0.015
+    type InitialValidatorPruneLen   = ConstU64<1>;
+    type InitialScalingLawPower     = ConstU16<50>; // 0.5
+    type InitialTempo               = ConstU16<DEFAULT_SUBNET_TEMPO>;
+    type InitialAdjustmentInterval  = ConstU16<100>;
+    type InitialAdjustmentAlpha     = ConstU64<0>; // no weight to previous value.
+    type InitialTargetRegistrationsPerInterval = ConstU16<2>;
+    type InitialImmunityPeriod      = ConstU16<4096>;
+    type InitialActivityCutoff      = ConstU16<5000>;
+    type InitialMaxRegistrationsPerBlock = ConstU16<1>;
+    type InitialMaxAllowedValidators = ConstU16<128>;
+    type InitialPruningScore        = ConstU16<{ u16::MAX }>;
+    type InitialDefaultDelegateTake = ConstU16<11_796>; // 18% honest number.
+    type InitialDefaultChildKeyTake = ConstU16<0>; // Allow 0% childkey take
+    type InitialMinDelegateTake     = ConstU16<0>; // Allow 0% delegate take
+    type InitialMinChildKeyTake     = ConstU16<0>; // 0 %
+    type InitialWeightsVersionKey   = ConstU64<0>;
+    type InitialDifficulty          = ConstU64<10_000_000>;
+    type InitialMaxDifficulty       = ConstU64<{ u64::MAX / 4 }>;
+    type InitialMinDifficulty       = ConstU64<10_000_000>;
+    type InitialServingRateLimit    = ConstU64<50>;
+    type InitialBurn                = ConstU64<1_000_000_000>; // 1 tao
+    type InitialMaxBurn             = ConstU64<100_000_000_000>; // 100 tao
+    type InitialMinBurn             = ConstU64<1_000_000_000>; // 1 tao
+    // --
+    type KeySwapCost                = ConstU64<1_000_000_000>;
+    type AlphaHigh                  = ConstU16<58982>; // Represents 0.9 as per the production default
+    type AlphaLow                   = ConstU16<45875>; // Represents 0.7 as per the production default
+    type LiquidAlphaOn              = ConstBool<false>;
+    type RootTempo                  = ConstU16<ROOT_TEMPO>;
+
+    type InitialTxRateLimit                     = ConstU64<SUBTENSOR_INITIAL_TX_RATE_LIMIT>;
+    type InitialTxDelegateTakeRateLimit         = ConstU64<216000>; // 30 days at 12 seconds per block ?
+    type InitialTxChildKeyTakeRateLimit         = ConstU64<INITIAL_CHILDKEY_TAKE_RATELIMIT>;
+    type InitialMaxChildKeyTake                 = ConstU16<11_796>; // 18 %
+    type InitialRAORecycledForRegistration      = ConstU64<0>; // 0 rao
+    type InitialSenateRequiredStakePercentage   = ConstU64<1>; // 1 percent of total stake
+    type InitialNetworkImmunityPeriod           = ConstU64<{ 7 * 7200 }>;
+    type InitialNetworkMinAllowedUids           = ConstU16<128>;
+    type InitialNetworkMinLockCost              = ConstU64<1_000_000_000_000>; // 1000 TAO
+    type InitialNetworkLockReductionInterval    = ConstU64<{ 14 * 7200 }>;
+    type InitialSubnetOwnerCut                  = ConstU16<11_796>; // 18 percent
+    type InitialSubnetLimit                     = ConstU16<1024>;
     type InitialFirstReservedNetuids            = ConstU16<FIRST_RESERVED_NETUIDS>;
-    type InitialNetworkRateLimit 				= SubtensorInitialNetworkRateLimit;
-    type InitialTargetStakesPerInterval 		= ConstU64<1>;
-    type KeySwapCost 							= SubtensorInitialKeySwapCost;
-    type AlphaHigh 								= InitialAlphaHigh;
-    type AlphaLow 								= InitialAlphaLow;
-    type LiquidAlphaOn 							= InitialLiquidAlphaOn;
-    type InitialHotkeyEmissionTempo 			= SubtensorInitialHotkeyEmissionTempo;
-    type InitialNetworkMaxStake 				= SubtensorInitialNetworkMaxStake;
-    type Preimages 								= Preimage;
-    type InitialColdkeySwapScheduleDuration 	= InitialColdkeySwapScheduleDuration;
+    type InitialNetworkRateLimit                = SubtensorInitialNetworkRateLimit;
+    type InitialTargetStakesPerInterval         = ConstU64<1>;
+    type InitialHotkeyEmissionTempo             = SubtensorInitialHotkeyEmissionTempo;
+    type InitialNetworkMaxStake                 = ConstU64<{ u64::MAX }>; // Maximum possible value for u64, this make the make stake infinity
+    type InitialColdkeySwapScheduleDuration     = InitialColdkeySwapScheduleDuration;
     type InitialDissolveNetworkScheduleDuration = InitialDissolveNetworkScheduleDuration;
-    type RootTempo                              = ConstU16<ROOT_TEMPO>;
     type DefaultStakeInterval                   = ConstU64<DEFAULT_STAKE_INTERVAL>;
     type DefaultWeightsSetRateLimit             = ConstU64<DEFAULT_WEIGHTS_SET_RATE_LIMIT>;
 }
 parameter_types! {
-    pub const SubtensorInitialRho							: u16 = 10;
-    pub const SubtensorInitialKappa							: u16 = 32_767; // 0.5 = 65535/2
-    pub const SubtensorInitialMaxAllowedUids				: u16 = 4096;
-    pub const SubtensorInitialIssuance						: u64 = 0;
-    pub const SubtensorInitialMinAllowedWeights				: u16 = 1024;
-    pub const SubtensorInitialEmissionValue					: u16 = 0;
-    pub const SubtensorInitialMaxWeightsLimit				: u16 = 1000; // 1000/2^16 = 0.015
-    pub const SubtensorInitialValidatorPruneLen				: u64 = 1;
-    pub const SubtensorInitialScalingLawPower				: u16 = 50; // 0.5
-    pub const SubtensorInitialMaxAllowedValidators			: u16 = 128;
-    pub const SubtensorInitialTempo							: u16 = DEFAULT_SUBNET_TEMPO;
-    pub const SubtensorInitialDifficulty					: u64 = 10_000_000;
-    pub const SubtensorInitialAdjustmentInterval			: u16 = 100;
-    pub const SubtensorInitialAdjustmentAlpha				: u64 = 0; // no weight to previous value.
-    pub const SubtensorInitialTargetRegistrationsPerInterval: u16 = 2;
-    pub const SubtensorInitialImmunityPeriod				: u16 = 4096;
-    pub const SubtensorInitialActivityCutoff				: u16 = 5000;
-    pub const SubtensorInitialMaxRegistrationsPerBlock		: u16 = 1;
-    pub const SubtensorInitialPruningScore 					: u16 = u16::MAX;
-    pub const SubtensorInitialBondsMovingAverage			: u64 = 900_000;
-    pub const SubtensorInitialDefaultTake					: u16 = 11_796; // 18% honest number.
-    pub const SubtensorInitialMinDelegateTake				: u16 = 0; // Allow 0% delegate take
-    pub const SubtensorInitialDefaultChildKeyTake			: u16 = 0; // Allow 0% childkey take
-    pub const SubtensorInitialMinChildKeyTake				: u16 = 0; // 0 %
-    pub const SubtensorInitialMaxChildKeyTake				: u16 = 11_796; // 18 %
-    pub const SubtensorInitialWeightsVersionKey				: u64 = 0;
-    pub const SubtensorInitialMinDifficulty					: u64 = 10_000_000;
-    pub const SubtensorInitialMaxDifficulty					: u64 = u64::MAX / 4;
-    pub const SubtensorInitialServingRateLimit				: u64 = 50;
-    pub const SubtensorInitialBurn							: u64 = 1_000_000_000; // 1 tao
-    pub const SubtensorInitialMinBurn						: u64 = 1_000_000_000; // 1 tao
-    pub const SubtensorInitialMaxBurn						: u64 = 100_000_000_000; // 100 tao
-    pub const SubtensorInitialTxDelegateTakeRateLimit		: u64 = 216000; // 30 days at 12 seconds per block
-    pub const SubtensorInitialTxChildKeyTakeRateLimit		: u64 = INITIAL_CHILDKEY_TAKE_RATELIMIT;
-    pub const SubtensorInitialRAORecycledForRegistration	: u64 = 0; // 0 rao
-    pub const SubtensorInitialSenateRequiredStakePercentage	: u64 = 1; // 1 percent of total stake
-    pub const SubtensorInitialNetworkImmunity				: u64 = 7 * 7200;
-    pub const SubtensorInitialMinAllowedUids				: u16 = 128;
-    pub const SubtensorInitialMinLockCost					: u64 = 1_000_000_000_000; // 1000 TAO
-    pub const SubtensorInitialSubnetOwnerCut				: u16 = 11_796; // 18 percent
-    pub const SubtensorInitialSubnetLimit					: u16 = 1024;
-    pub const SubtensorInitialNetworkLockReductionInterval	: u64 = 14 * 7200;
     pub const SubtensorInitialNetworkRateLimit				: u64 = 7200;
-    pub const SubtensorInitialKeySwapCost					: u64 = 1_000_000_000;
-    pub const InitialAlphaHigh								: u16 = 58982; // Represents 0.9 as per the production default
-    pub const InitialAlphaLow								: u16 = 45875; // Represents 0.7 as per the production default
-    pub const InitialLiquidAlphaOn							: bool = false; // Default value for LiquidAlphaOn
     pub const SubtensorInitialHotkeyEmissionTempo			: u64 = 7200; // Drain every day.
-    pub const SubtensorInitialNetworkMaxStake				: u64 = u64::MAX; // Maximum possible value for u64, this make the make stake infinity
     pub const InitialColdkeySwapScheduleDuration			: BlockNumber = 5 * DAYS;
     pub const InitialDissolveNetworkScheduleDuration		: BlockNumber = 5 * DAYS;
 }
@@ -1121,8 +1077,8 @@ impl pallet_admin_utils::Config for Runtime {
 
 // Define the ChainId
 parameter_types! {
-    pub const SubtensorChainId: u64 = 0x03B1; // Unicode for lowercase alpha
-    // pub const SubtensorChainId: u64 = 0x03C4; // Unicode for lowercase tau
+    pub const JungochainChainId: u64 = 0x03B1; // Unicode for lowercase alpha
+    // pub const JungochainChainId: u64 = 0x03C4; // Unicode for lowercase tau
 }
 
 impl pallet_evm_chain_id::Config for Runtime {}
@@ -1167,9 +1123,9 @@ parameter_types! {
 /// difference factor is 9 decimals, or 10^9
 const EVM_DECIMALS_FACTOR: u64 = 1_000_000_000_u64;
 
-pub struct SubtensorEvmBalanceConverter;
+pub struct JungochainEvmBalanceConverter;
 
-impl BalanceConverter for SubtensorEvmBalanceConverter {
+impl BalanceConverter for JungochainEvmBalanceConverter {
     /// Convert from Substrate balance (u64) to EVM balance (U256)
     fn into_evm_balance(value: U256) -> Option<U256> {
         value
@@ -1211,7 +1167,7 @@ impl pallet_evm::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type PrecompilesType = FrontierPrecompiles<Self>;
     type PrecompilesValue = PrecompilesValue;
-    type ChainId = SubtensorChainId;
+    type ChainId = JungochainChainId;
     type BlockGasLimit = BlockGasLimit;
     type Runner = pallet_evm::runner::stack::Runner<Self>;
     type OnChargeTransaction = ();
@@ -1221,7 +1177,7 @@ impl pallet_evm::Config for Runtime {
     type SuicideQuickClearLimit = SuicideQuickClearLimit;
     type Timestamp = Timestamp;
     type WeightInfo = pallet_evm::weights::SubstrateWeight<Self>;
-    type BalanceConverter = SubtensorEvmBalanceConverter;
+    type BalanceConverter = JungochainEvmBalanceConverter;
 }
 
 parameter_types! {
@@ -1357,8 +1313,9 @@ construct_runtime!(
         Aura        : pallet_aura           = 3,
         Grandpa     : pallet_grandpa        = 4,
         Balances    : pallet_balances       = 5,
-        TransactionPayment: pallet_transaction_payment = 6,
-        SubtensorModule: pallet_subtensor   = 7,
+        TransactionPayment  : pallet_transaction_payment = 6,
+        // TODO: rename to JungochainModule
+        SubtensorModule     : pallet_jungochain          = 7,
 
         Triumvirate         : pallet_collective::<Instance1>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>} = 8,
         TriumvirateMembers  : pallet_membership::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>} = 9,
@@ -1401,7 +1358,7 @@ pub type SignedExtra = (
     check_nonce::CheckNonce<Runtime>,
     frame_system::CheckWeight<Runtime>,
     pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
-    pallet_subtensor::SubtensorSignedExtension<Runtime>,
+    pallet_jungochain::JungochainSignedExtension<Runtime>,
     pallet_commitments::CommitmentsSignedExtension<Runtime>,
     frame_metadata_hash_extension::CheckMetadataHash<Runtime>,
 );
@@ -1409,7 +1366,7 @@ pub type SignedExtra = (
 type Migrations = (
     // Leave this migration in the runtime, so every runtime upgrade tiny rounding errors (fractions of fractions
     // of a cent) are cleaned up. These tiny rounding errors occur due to floating point coversion.
-    pallet_subtensor::migrations::migrate_init_total_issuance::initialise_total_issuance::Migration<
+    pallet_jungochain::migrations::migrate_init_total_issuance::initialise_total_issuance::Migration<
         Runtime,
     >,
 );
@@ -1449,7 +1406,7 @@ mod benches {
         [pallet_registry, Registry]
         [pallet_commitments, Commitments]
         [pallet_admin_utils, AdminUtils]
-        [pallet_subtensor, SubtensorModule]
+        [pallet_jungochain, SubtensorModule]
     );
 }
 
@@ -1956,7 +1913,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl subtensor_custom_rpc_runtime_api::DelegateInfoRuntimeApi<Block> for Runtime {
+    impl jungochain_custom_rpc_runtime_api::DelegateInfoRuntimeApi<Block> for Runtime {
         fn get_delegates() -> Vec<u8> {
             let result = SubtensorModule::get_delegates();
             result.encode()
@@ -1978,7 +1935,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl subtensor_custom_rpc_runtime_api::NeuronInfoRuntimeApi<Block> for Runtime {
+    impl jungochain_custom_rpc_runtime_api::NeuronInfoRuntimeApi<Block> for Runtime {
         fn get_neurons_lite(netuid: u16) -> Vec<u8> {
             let result = SubtensorModule::get_neurons_lite(netuid);
             result.encode()
@@ -2010,7 +1967,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl subtensor_custom_rpc_runtime_api::SubnetInfoRuntimeApi<Block> for Runtime {
+    impl jungochain_custom_rpc_runtime_api::SubnetInfoRuntimeApi<Block> for Runtime {
         fn get_subnet_info(netuid: u16) -> Vec<u8> {
             let _result = SubtensorModule::get_subnet_info(netuid);
             if _result.is_some() {
@@ -2052,7 +2009,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl subtensor_custom_rpc_runtime_api::StakeInfoRuntimeApi<Block> for Runtime {
+    impl jungochain_custom_rpc_runtime_api::StakeInfoRuntimeApi<Block> for Runtime {
         fn get_stake_info_for_coldkey( coldkey_account_vec: Vec<u8> ) -> Vec<u8> {
             let result = SubtensorModule::get_stake_info_for_coldkey( coldkey_account_vec );
             result.encode()
@@ -2064,7 +2021,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl subtensor_custom_rpc_runtime_api::SubnetRegistrationRuntimeApi<Block> for Runtime {
+    impl jungochain_custom_rpc_runtime_api::SubnetRegistrationRuntimeApi<Block> for Runtime {
         fn get_network_registration_cost() -> u64 {
             SubtensorModule::get_network_lock_cost()
         }
@@ -2100,7 +2057,7 @@ fn test_into_substrate_balance_valid() {
     let evm_balance = U256::from(1_000_000_000_000_000_000u128); // 1 TAO in EVM
     let expected_substrate_balance = U256::from(1_000_000_000u128); // 1 TAO in Substrate
 
-    let result = SubtensorEvmBalanceConverter::into_substrate_balance(evm_balance);
+    let result = JungochainEvmBalanceConverter::into_substrate_balance(evm_balance);
     assert_eq!(result, Some(expected_substrate_balance));
 }
 
@@ -2110,7 +2067,7 @@ fn test_into_substrate_balance_large_value() {
     let evm_balance = U256::from(u64::MAX) * U256::from(EVM_DECIMALS_FACTOR); // Max u64 TAO in EVM
     let expected_substrate_balance = U256::from(u64::MAX);
 
-    let result = SubtensorEvmBalanceConverter::into_substrate_balance(evm_balance);
+    let result = JungochainEvmBalanceConverter::into_substrate_balance(evm_balance);
     assert_eq!(result, Some(expected_substrate_balance));
 }
 
@@ -2119,7 +2076,7 @@ fn test_into_substrate_balance_exceeds_u64() {
     // EVM balance that exceeds u64 after conversion
     let evm_balance = (U256::from(u64::MAX) + U256::from(1)) * U256::from(EVM_DECIMALS_FACTOR);
 
-    let result = SubtensorEvmBalanceConverter::into_substrate_balance(evm_balance);
+    let result = JungochainEvmBalanceConverter::into_substrate_balance(evm_balance);
     assert_eq!(result, None); // Exceeds u64, should return None
 }
 
@@ -2129,7 +2086,7 @@ fn test_into_substrate_balance_precision_loss() {
     let evm_balance = U256::from(1_000_000_000_123_456_789u128); // 1 TAO + extra precision in EVM
     let expected_substrate_balance = U256::from(1_000_000_000u128); // Truncated to 1 TAO in Substrate
 
-    let result = SubtensorEvmBalanceConverter::into_substrate_balance(evm_balance);
+    let result = JungochainEvmBalanceConverter::into_substrate_balance(evm_balance);
     assert_eq!(result, Some(expected_substrate_balance));
 }
 
@@ -2139,7 +2096,7 @@ fn test_into_substrate_balance_zero_value() {
     let evm_balance = U256::from(0);
     let expected_substrate_balance = U256::from(0);
 
-    let result = SubtensorEvmBalanceConverter::into_substrate_balance(evm_balance);
+    let result = JungochainEvmBalanceConverter::into_substrate_balance(evm_balance);
     assert_eq!(result, Some(expected_substrate_balance));
 }
 
@@ -2149,7 +2106,7 @@ fn test_into_evm_balance_valid() {
     let substrate_balance = U256::from(1_000_000_000u128); // 1 TAO in Substrate
     let expected_evm_balance = U256::from(1_000_000_000_000_000_000u128); // 1 TAO in EVM
 
-    let result = SubtensorEvmBalanceConverter::into_evm_balance(substrate_balance);
+    let result = JungochainEvmBalanceConverter::into_evm_balance(substrate_balance);
     assert_eq!(result, Some(expected_evm_balance));
 }
 
@@ -2159,6 +2116,6 @@ fn test_into_evm_balance_overflow() {
     let substrate_balance = U256::from(u64::MAX) + U256::from(1); // Large balance
     let expected_evm_balance = substrate_balance * U256::from(EVM_DECIMALS_FACTOR);
 
-    let result = SubtensorEvmBalanceConverter::into_evm_balance(substrate_balance);
+    let result = JungochainEvmBalanceConverter::into_evm_balance(substrate_balance);
     assert_eq!(result, Some(expected_evm_balance)); // Should return the scaled value
 }

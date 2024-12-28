@@ -3951,6 +3951,192 @@ dependencies = [
 ]
 
 [[package]]
+name = "jungochain"
+version = "0.1.0"
+dependencies = [
+ "jungochain-node",
+ "jungochain-runtime",
+ "proc-macro2",
+ "quote",
+ "rayon",
+ "subtensor-linting",
+ "syn 2.0.79",
+ "walkdir",
+]
+
+[[package]]
+name = "jungochain-custom-rpc"
+version = "0.1.0"
+dependencies = [
+ "jsonrpsee",
+ "jungochain-custom-rpc-runtime-api",
+ "pallet-jungochain",
+ "parity-scale-codec",
+ "serde",
+ "sp-api",
+ "sp-blockchain",
+ "sp-rpc",
+ "sp-runtime",
+]
+
+[[package]]
+name = "jungochain-custom-rpc-runtime-api"
+version = "0.0.2"
+dependencies = [
+ "frame-support",
+ "pallet-jungochain",
+ "serde",
+ "sp-api",
+]
+
+[[package]]
+name = "jungochain-node"
+version = "0.1.0-dev"
+dependencies = [
+ "async-trait",
+ "clap",
+ "fc-api",
+ "fc-consensus",
+ "fc-db",
+ "fc-mapping-sync",
+ "fc-rpc",
+ "fc-rpc-core",
+ "fc-storage",
+ "fp-dynamic-fee",
+ "fp-rpc",
+ "frame-benchmarking",
+ "frame-benchmarking-cli",
+ "frame-metadata-hash-extension",
+ "frame-system",
+ "frame-system-rpc-runtime-api",
+ "futures",
+ "jsonrpsee",
+ "jungochain-custom-rpc",
+ "jungochain-custom-rpc-runtime-api",
+ "jungochain-runtime",
+ "memmap2 0.9.5",
+ "pallet-commitments",
+ "pallet-transaction-payment",
+ "pallet-transaction-payment-rpc",
+ "pallet-transaction-payment-rpc-runtime-api",
+ "parity-scale-codec",
+ "sc-basic-authorship",
+ "sc-chain-spec",
+ "sc-chain-spec-derive",
+ "sc-cli",
+ "sc-client-api",
+ "sc-consensus",
+ "sc-consensus-aura",
+ "sc-consensus-grandpa",
+ "sc-consensus-grandpa-rpc",
+ "sc-consensus-manual-seal",
+ "sc-consensus-slots",
+ "sc-executor",
+ "sc-keystore",
+ "sc-network",
+ "sc-network-sync",
+ "sc-offchain",
+ "sc-rpc",
+ "sc-rpc-api",
+ "sc-service",
+ "sc-telemetry",
+ "sc-transaction-pool",
+ "sc-transaction-pool-api",
+ "serde",
+ "serde_json",
+ "sp-api",
+ "sp-block-builder",
+ "sp-blockchain",
+ "sp-consensus",
+ "sp-consensus-aura",
+ "sp-consensus-grandpa",
+ "sp-core",
+ "sp-inherents",
+ "sp-io",
+ "sp-keyring",
+ "sp-offchain",
+ "sp-runtime",
+ "sp-session",
+ "sp-timestamp",
+ "sp-transaction-pool",
+ "substrate-build-script-utils",
+ "substrate-frame-rpc-system",
+ "substrate-prometheus-endpoint",
+]
+
+[[package]]
+name = "jungochain-runtime"
+version = "0.1.0-dev"
+dependencies = [
+ "ed25519-dalek",
+ "fp-account",
+ "fp-evm",
+ "fp-rpc",
+ "fp-self-contained",
+ "frame-benchmarking",
+ "frame-executive",
+ "frame-metadata",
+ "frame-metadata-hash-extension",
+ "frame-support",
+ "frame-system",
+ "frame-system-benchmarking",
+ "frame-system-rpc-runtime-api",
+ "frame-try-runtime",
+ "jungochain-custom-rpc-runtime-api",
+ "log",
+ "pallet-admin-utils",
+ "pallet-aura",
+ "pallet-balances",
+ "pallet-base-fee",
+ "pallet-collective",
+ "pallet-commitments",
+ "pallet-dynamic-fee",
+ "pallet-ethereum",
+ "pallet-evm",
+ "pallet-evm-chain-id",
+ "pallet-evm-precompile-modexp",
+ "pallet-evm-precompile-sha3fips",
+ "pallet-evm-precompile-simple",
+ "pallet-grandpa",
+ "pallet-hotfix-sufficients",
+ "pallet-insecure-randomness-collective-flip",
+ "pallet-jungochain",
+ "pallet-membership",
+ "pallet-multisig",
+ "pallet-preimage",
+ "pallet-proxy",
+ "pallet-registry",
+ "pallet-safe-mode",
+ "pallet-scheduler",
+ "pallet-sudo",
+ "pallet-timestamp",
+ "pallet-transaction-payment",
+ "pallet-transaction-payment-rpc-runtime-api",
+ "pallet-utility",
+ "parity-scale-codec",
+ "scale-info",
+ "serde_json",
+ "smallvec",
+ "sp-api",
+ "sp-block-builder",
+ "sp-consensus-aura",
+ "sp-core",
+ "sp-genesis-builder",
+ "sp-inherents",
+ "sp-io",
+ "sp-offchain",
+ "sp-runtime",
+ "sp-session",
+ "sp-std",
+ "sp-storage",
+ "sp-tracing",
+ "sp-transaction-pool",
+ "sp-version",
+ "substrate-wasm-builder",
+ "subtensor-macros",
+]
+
+[[package]]
 name = "k256"
 version = "0.13.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5310,153 +5496,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b93853da6d84c2e3c7d730d6473e8817692dd89be387eb01b94d7f108ecb5b8c"
 
 [[package]]
-name = "node-subtensor"
-version = "4.0.0-dev"
-dependencies = [
- "async-trait",
- "clap",
- "fc-api",
- "fc-consensus",
- "fc-db",
- "fc-mapping-sync",
- "fc-rpc",
- "fc-rpc-core",
- "fc-storage",
- "fp-dynamic-fee",
- "fp-rpc",
- "frame-benchmarking",
- "frame-benchmarking-cli",
- "frame-metadata-hash-extension",
- "frame-system",
- "frame-system-rpc-runtime-api",
- "futures",
- "jsonrpsee",
- "memmap2 0.9.5",
- "node-subtensor-runtime",
- "pallet-commitments",
- "pallet-transaction-payment",
- "pallet-transaction-payment-rpc",
- "pallet-transaction-payment-rpc-runtime-api",
- "parity-scale-codec",
- "sc-basic-authorship",
- "sc-chain-spec",
- "sc-chain-spec-derive",
- "sc-cli",
- "sc-client-api",
- "sc-consensus",
- "sc-consensus-aura",
- "sc-consensus-grandpa",
- "sc-consensus-grandpa-rpc",
- "sc-consensus-manual-seal",
- "sc-consensus-slots",
- "sc-executor",
- "sc-keystore",
- "sc-network",
- "sc-network-sync",
- "sc-offchain",
- "sc-rpc",
- "sc-rpc-api",
- "sc-service",
- "sc-telemetry",
- "sc-transaction-pool",
- "sc-transaction-pool-api",
- "serde",
- "serde_json",
- "sp-api",
- "sp-block-builder",
- "sp-blockchain",
- "sp-consensus",
- "sp-consensus-aura",
- "sp-consensus-grandpa",
- "sp-core",
- "sp-inherents",
- "sp-io",
- "sp-keyring",
- "sp-offchain",
- "sp-runtime",
- "sp-session",
- "sp-timestamp",
- "sp-transaction-pool",
- "substrate-build-script-utils",
- "substrate-frame-rpc-system",
- "substrate-prometheus-endpoint",
- "subtensor-custom-rpc",
- "subtensor-custom-rpc-runtime-api",
-]
-
-[[package]]
-name = "node-subtensor-runtime"
-version = "4.0.0-dev"
-dependencies = [
- "ed25519-dalek",
- "fp-account",
- "fp-evm",
- "fp-rpc",
- "fp-self-contained",
- "frame-benchmarking",
- "frame-executive",
- "frame-metadata",
- "frame-metadata-hash-extension",
- "frame-support",
- "frame-system",
- "frame-system-benchmarking",
- "frame-system-rpc-runtime-api",
- "frame-try-runtime",
- "log",
- "pallet-admin-utils",
- "pallet-aura",
- "pallet-balances",
- "pallet-base-fee",
- "pallet-collective",
- "pallet-commitments",
- "pallet-dynamic-fee",
- "pallet-ethereum",
- "pallet-evm",
- "pallet-evm-chain-id",
- "pallet-evm-precompile-modexp",
- "pallet-evm-precompile-sha3fips",
- "pallet-evm-precompile-simple",
- "pallet-grandpa",
- "pallet-hotfix-sufficients",
- "pallet-insecure-randomness-collective-flip",
- "pallet-membership",
- "pallet-multisig",
- "pallet-preimage",
- "pallet-proxy",
- "pallet-registry",
- "pallet-safe-mode",
- "pallet-scheduler",
- "pallet-subtensor",
- "pallet-sudo",
- "pallet-timestamp",
- "pallet-transaction-payment",
- "pallet-transaction-payment-rpc-runtime-api",
- "pallet-utility",
- "parity-scale-codec",
- "scale-info",
- "serde_json",
- "smallvec",
- "sp-api",
- "sp-block-builder",
- "sp-consensus-aura",
- "sp-core",
- "sp-genesis-builder",
- "sp-inherents",
- "sp-io",
- "sp-offchain",
- "sp-runtime",
- "sp-session",
- "sp-std",
- "sp-storage",
- "sp-tracing",
- "sp-transaction-pool",
- "sp-version",
- "substrate-wasm-builder",
- "subtensor-custom-rpc-runtime-api",
- "subtensor-macros",
-]
-
-[[package]]
 name = "nohash-hasher"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5758,15 +5797,15 @@ checksum = "b15813163c1d831bf4a13c3610c05c0d03b39feb07f7e09fa234dac9b15aaf39"
 
 [[package]]
 name = "pallet-admin-utils"
-version = "4.0.0-dev"
+version = "0.1.0-dev"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
  "pallet-balances",
+ "pallet-jungochain",
  "pallet-scheduler",
- "pallet-subtensor",
  "parity-scale-codec",
  "scale-info",
  "sp-consensus-aura",
@@ -6023,6 +6062,44 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-jungochain"
+version = "0.1.0-dev"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "hex",
+ "hex-literal",
+ "log",
+ "ndarray",
+ "num-traits",
+ "pallet-balances",
+ "pallet-collective",
+ "pallet-membership",
+ "pallet-preimage",
+ "pallet-scheduler",
+ "pallet-transaction-payment",
+ "pallet-utility",
+ "parity-scale-codec",
+ "parity-util-mem",
+ "rand",
+ "scale-info",
+ "serde",
+ "serde-tuple-vec-map",
+ "serde_bytes",
+ "serde_json",
+ "serde_with",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "sp-tracing",
+ "sp-version",
+ "substrate-fixed",
+ "subtensor-macros",
+]
+
+[[package]]
 name = "pallet-membership"
 version = "38.0.0"
 source = "git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-stable2409#87971b3e92721bdf10bf40b410eaae779d494ca0"
@@ -6154,44 +6231,6 @@ dependencies = [
  "sp-staking",
  "sp-state-machine",
  "sp-trie",
-]
-
-[[package]]
-name = "pallet-subtensor"
-version = "4.0.0-dev"
-dependencies = [
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "hex",
- "hex-literal",
- "log",
- "ndarray",
- "num-traits",
- "pallet-balances",
- "pallet-collective",
- "pallet-membership",
- "pallet-preimage",
- "pallet-scheduler",
- "pallet-transaction-payment",
- "pallet-utility",
- "parity-scale-codec",
- "parity-util-mem",
- "rand",
- "scale-info",
- "serde",
- "serde-tuple-vec-map",
- "serde_bytes",
- "serde_json",
- "serde_with",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
- "sp-tracing",
- "sp-version",
- "substrate-fixed",
- "subtensor-macros",
 ]
 
 [[package]]
@@ -10438,45 +10477,6 @@ dependencies = [
  "toml 0.8.19",
  "walkdir",
  "wasm-opt",
-]
-
-[[package]]
-name = "subtensor"
-version = "0.1.0"
-dependencies = [
- "node-subtensor",
- "node-subtensor-runtime",
- "proc-macro2",
- "quote",
- "rayon",
- "subtensor-linting",
- "syn 2.0.79",
- "walkdir",
-]
-
-[[package]]
-name = "subtensor-custom-rpc"
-version = "0.0.2"
-dependencies = [
- "jsonrpsee",
- "pallet-subtensor",
- "parity-scale-codec",
- "serde",
- "sp-api",
- "sp-blockchain",
- "sp-rpc",
- "sp-runtime",
- "subtensor-custom-rpc-runtime-api",
-]
-
-[[package]]
-name = "subtensor-custom-rpc-runtime-api"
-version = "0.0.2"
-dependencies = [
- "frame-support",
- "pallet-subtensor",
- "serde",
- "sp-api",
 ]
 
 [[package]]

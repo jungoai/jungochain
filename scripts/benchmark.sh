@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-DEFAULT_BIN_PATH='./target/production/node-subtensor'
+DEFAULT_BIN_PATH='./target/production/jungochain-node'
 BIN_PATH=$DEFAULT_BIN_PATH
 TMP_SPEC='temp.json'
 OUTPUT_FILE='benchmarking.txt'
@@ -24,7 +24,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Ensure binary exists before node-subtensor executions
+# Ensure binary exists before jungochain-node executions
 if [ ! -f $BIN_PATH ]; then
     if [[ "$DEFAULT_BIN_PATH" == "$BIN_PATH" ]]; then
         cargo build --profile production --features runtime-benchmarks
@@ -40,7 +40,7 @@ $BIN_PATH build-spec --disable-default-bootnode --raw --chain local >$TMP_SPEC
 # Run benchmark
 $BIN_PATH benchmark pallet \
 --chain=$TMP_SPEC \
---pallet pallet-subtensor --extrinsic 'schedule_coldkey_swap' \
+--pallet pallet-jungochain --extrinsic 'schedule_coldkey_swap' \
 --output $OUTPUT_FILE
 
 rm $TMP_SPEC

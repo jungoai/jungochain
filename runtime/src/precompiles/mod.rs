@@ -68,7 +68,7 @@ where
             a if a == hash(1024) => Some(Sha3FIPS256::execute(handle)),
             a if a == hash(1025) => Some(ECRecoverPublicKey::execute(handle)),
             a if a == hash(EDVERIFY_PRECOMPILE_INDEX) => Some(Ed25519Verify::execute(handle)),
-            // Subtensor specific precompiles :
+            // Jungochain specific precompiles :
             a if a == hash(BALANCE_TRANSFER_INDEX) => {
                 Some(BalanceTransferPrecompile::execute(handle))
             }

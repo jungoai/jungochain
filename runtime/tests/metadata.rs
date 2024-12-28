@@ -1,7 +1,7 @@
 #![allow(clippy::indexing_slicing)]
 
 use frame_metadata::RuntimeMetadata;
-use node_subtensor_runtime::Runtime;
+use jungochain_runtime::Runtime;
 use scale_info::TypeDef;
 
 fn is_pallet_error(segments: &[String]) -> bool {
@@ -10,7 +10,7 @@ fn is_pallet_error(segments: &[String]) -> bool {
         "pallet_collective",
         "pallet_commitments",
         "pallet_registry",
-        "pallet_subtensor",
+        "pallet_jungochain",
     ];
 
     if segments.len() != 3 {

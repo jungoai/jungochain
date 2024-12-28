@@ -2,7 +2,7 @@
 set -ex
 
 # List of pallets you want to benchmark
-pallets=("pallet_subtensor" "pallet_collective" "pallet_commitments" "pallet_registry" "pallet_admin_utils")
+pallets=("pallet_jungochain" "pallet_collective" "pallet_commitments" "pallet_registry" "pallet_admin_utils")
 
 # Chain spec and output directory
 chain_spec="finney"  # or your specific chain spec
@@ -10,7 +10,7 @@ chain_spec="finney"  # or your specific chain spec
 for pallet in "${pallets[@]}"
 do
   echo "Benchmarking $pallet..."
-  cargo run --profile=production --features=runtime-benchmarks,try-runtime --bin node-subtensor -- benchmark pallet \
+  cargo run --profile=production --features=runtime-benchmarks,try-runtime --bin jungochain-node -- benchmark pallet \
     --chain $chain_spec \
     --wasm-execution=compiled \
     --pallet $pallet \

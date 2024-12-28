@@ -1,13 +1,13 @@
 [package]
 name = "pallet-admin-utils"
-version = "4.0.0-dev"
+version = "0.1.0-dev"
 description = "FRAME pallet for extending admin utilities."
-authors = ["Bittensor Nucleus Team"]
-homepage = "https://bittensor.com"
+authors = [""] # TODO
+homepage = "https://jungoai.xyz"
 edition = "2021"
 license = "Unlicense"
 publish = false
-repository = "https://github.com/opentensor/subtensor"
+repository = "https://github.com/jungoai/jungochain"
 
 [lints]
 workspace = true
@@ -26,7 +26,7 @@ frame-support = { workspace = true }
 frame-system = { workspace = true }
 sp-runtime = { workspace = true }
 log = { workspace = true }
-pallet-subtensor = { version = "4.0.0-dev", default-features = false, path = "../subtensor" }
+pallet-jungochain = { version = "0.1.0-dev", default-features = false, path = "../jungochain" }
 sp-weights = { workspace = true }
 substrate-fixed = { workspace = true }
 
@@ -48,7 +48,7 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"scale-info/std",
-	"pallet-subtensor/std",
+	"pallet-jungochain/std",
 	"sp-consensus-aura/std",
 	"pallet-balances/std",
 	"pallet-scheduler/std",
@@ -67,7 +67,7 @@ runtime-benchmarks = [
 	"frame-system/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
-	"pallet-subtensor/runtime-benchmarks",
+	"pallet-jungochain/runtime-benchmarks",
 	"pallet-scheduler/runtime-benchmarks",
 ]
 try-runtime = [
@@ -76,5 +76,5 @@ try-runtime = [
 	"pallet-balances/try-runtime",
 	"pallet-scheduler/try-runtime",
 	"sp-runtime/try-runtime",
-	"pallet-subtensor/try-runtime"
+	"pallet-jungochain/try-runtime"
 ]

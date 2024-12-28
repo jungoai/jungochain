@@ -1,5 +1,5 @@
 // The goal of staking precompile is to allow interaction between EVM users and smart contracts and
-// subtensor staking functionality, namely add_stake, and remove_stake extrinsicsk, as well as the
+// jungochain staking functionality, namely add_stake, and remove_stake extrinsicsk, as well as the
 // staking state.
 //
 // Additional requirement is to preserve compatibility with Ethereum indexers, which requires
@@ -11,7 +11,7 @@
 //     method addStake. This method also takes hotkey public key (bytes32) of the hotkey
 //     that the stake should be assigned to.
 //   - Precompile transfers the balance back to the signing address, and then invokes
-//     do_add_stake from subtensor pallet with signing origin that mmatches to HashedAddressMapping
+//     do_add_stake from jungochain pallet with signing origin that mmatches to HashedAddressMapping
 //     of the message sender, which will effectively withdraw and stake balance from the message
 //     sender.
 //   - Precompile checks the result of do_add_stake and, in case of a failure, reverts the transaction,
@@ -20,7 +20,7 @@
 // Implementation of remove_stake:
 //   - User involkes removeStake method and specifies hotkey public key (bytes32) of the hotkey
 //     to remove stake from, and the amount to unstake.
-//   - Precompile calls do_remove_stake method of the subtensor pallet with the signing origin of message
+//   - Precompile calls do_remove_stake method of the jungochain pallet with the signing origin of message
 //     sender, which effectively unstakes the specified amount and credits it to the message sender
 //   - Precompile checks the result of do_remove_stake and, in case of a failure, reverts the transaction.
 //
@@ -73,7 +73,7 @@ impl StakingPrecompile {
                 .ok_or(ExitError::OutOfFund)?;
 
         // Create the add_stake call
-        let call = RuntimeCall::SubtensorModule(pallet_subtensor::Call::<Runtime>::add_stake {
+        let call = RuntimeCall::SubtensorModule(pallet_jungochain::Call::<Runtime>::add_stake {
             hotkey,
             amount_staked: amount_sub.unique_saturated_into(),
         });
@@ -94,7 +94,7 @@ impl StakingPrecompile {
             <Runtime as pallet_evm::Config>::BalanceConverter::into_substrate_balance(amount)
                 .ok_or(ExitError::OutOfFund)?;
 
-        let call = RuntimeCall::SubtensorModule(pallet_subtensor::Call::<Runtime>::remove_stake {
+        let call = RuntimeCall::SubtensorModule(pallet_jungochain::Call::<Runtime>::remove_stake {
             hotkey,
             amount_unstaked: amount_sub.unique_saturated_into(),
         });
@@ -137,7 +137,7 @@ impl StakingPrecompile {
                 output: vec![],
             }),
             Err(_) => Err(PrecompileFailure::Error {
-                exit_status: ExitError::Other("Subtensor call failed".into()),
+                exit_status: ExitError::Other("Jungochain call failed".into()),
             }),
         }
     }
