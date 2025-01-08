@@ -26,7 +26,7 @@ jobs:
   # runs cargo fmt
   cargo-fmt:
     name: cargo fmt
-    runs-on: SubtensorCI
+    runs-on: JungochainCI
     strategy:
       matrix:
         rust-branch:
@@ -65,7 +65,7 @@ jobs:
 
   cargo-clippy-default-features:
     name: cargo clippy
-    runs-on: SubtensorCI
+    runs-on: JungochainCI
     strategy:
       matrix:
         rust-branch:
@@ -105,7 +105,7 @@ jobs:
 
   cargo-check-lints:
     name: check custom lints
-    runs-on: SubtensorCI
+    runs-on: JungochainCI
     strategy:
       matrix:
         rust-branch:
@@ -152,7 +152,7 @@ jobs:
 
   cargo-clippy-all-features:
     name: cargo clippy --all-features
-    runs-on: SubtensorCI
+    runs-on: JungochainCI
     strategy:
       matrix:
         rust-target:
@@ -191,7 +191,7 @@ jobs:
   # runs cargo test --workspace
   cargo-test:
     name: cargo test
-    runs-on: SubtensorCI
+    runs-on: JungochainCI
     strategy:
       matrix:
         rust-target:
@@ -230,7 +230,7 @@ jobs:
   # ensures cargo fix has no trivial changes that can be applied
   cargo-fix:
     name: cargo fix
-    runs-on: SubtensorCI
+    runs-on: JungochainCI
     strategy:
       matrix:
         rust-branch:
@@ -280,7 +280,7 @@ jobs:
 
   check-feature-propagation:
     name: zepter run check
-    runs-on: SubtensorCI
+    runs-on: JungochainCI
 
     steps:
       - name: Install Zepter

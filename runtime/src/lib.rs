@@ -999,7 +999,7 @@ pub const DEFAULT_WEIGHTS_SET_RATE_LIMIT: u64 = 0;
 #[cfg(not(feature = "fast-blocks"))]
 pub const FIRST_RESERVED_NETUIDS: u16 = 1000;
 #[cfg(feature = "fast-blocks")]
-pub const FIRST_RESERVED_NETUIDS: u16 = 100;
+pub const FIRST_RESERVED_NETUIDS: u16 = 1000;
 
 type EnsureMajoritySenate =
     pallet_collective::EnsureProportionMoreThan<AccountId, TriumvirateCollective, 1, 2>;
@@ -1077,8 +1077,10 @@ impl pallet_admin_utils::Config for Runtime {
 
 // Define the ChainId
 parameter_types! {
-    pub const JungochainChainId: u64 = 0x03B1; // Unicode for lowercase alpha
-    // pub const JungochainChainId: u64 = 0x03C4; // Unicode for lowercase tau
+    // 0x107E; // 4222
+    // 0x107F; // 4223
+    // 0x1080; // 4224
+    pub const JungochainChainId: u64 = 0x107E; // 4222
 }
 
 impl pallet_evm_chain_id::Config for Runtime {}

@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   publish:
-    runs-on: SubtensorCI
+    runs-on: JungochainCI
 
     steps:
       - name: Checkout code

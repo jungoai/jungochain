@@ -20,7 +20,6 @@ This repository contains Jungoai's jungochain. Jungochain contains the trusted l
 
 ## System Requirements
 
-* The binaries in ./bin/release are x86_64 binaries to be used with the Linux kernel.
 * Jungochain needs ~286 MiB to run.
 * Architectures other than x86_64 are currently not supported.
 * OSs other than Linux and MacOS are currently not supported.
@@ -82,7 +81,17 @@ nix develop
 Use the following command to build the node without launching it:
 
 ```sh
-cargo build --release
+cargo build -p jungochain-node --release
+```
+
+Or to enable local faucet:
+```sh
+cargo build -p jungochain-node --release --features pow-faucet
+```
+
+For development it's good to enable fast-blocks to reduce the time of block creation:
+```sh
+cargo build -p jungochain-node --release --features pow-faucet,fast-blocks
 ```
 
 ### Single-Node Development Chain
@@ -90,24 +99,24 @@ cargo build --release
 This command will start the single-node development chain with non-persistent state:
 
 ```bash
-./target/release/jungochain --dev
+./target/release/jungochain-node --dev
 ```
 
 Purge the development chain's state:
 
 ```bash
-./target/release/jungochain purge-chain --dev
+./target/release/jungochain-node purge-chain --dev
 ```
 
 Start the development chain with detailed logging:
 
 ```bash
-RUST_BACKTRACE=1 ./target/release/jungochain-ldebug --dev
+RUST_BACKTRACE=1 ./target/release/jungochain-node -ldebug --dev
 ```
 
 Running debug with logs.
 ```bash
-SKIP_WASM_BUILD=1 RUST_LOG=runtime=debug -- --nocapture
+RUST_LOG=runtime=debug ./target/release/jungochain-node -- --nocapture
 ```
 
 Running individual tests
@@ -146,20 +155,21 @@ SKIP_WASM_BUILD=1 \
 </details>
 
 
-Running code coverage
-```bash
-bash scripts/code-coverage.sh
-```
+<!-- TODO -->
+<!-- Running code coverage -->
+<!-- ```bash -->
+<!-- bash scripts/code-coverage.sh -->
+<!-- ``` -->
 
-> Note: They above requires `cargo-tarpaulin` is installed to the host, eg. `cargo install cargo-tarpaulin`
-> Development chain means that the state of our chain will be in a tmp folder while the nodes are
-> running. Also, **alice** account will be authority and sudo account as declared in the
-> [genesis state](https://github.com/substrate-developer-hub/substrate-node-template/blob/main/node/src/chain_spec.rs#L49).
-> At the same time the following accounts will be pre-funded:
-> - Alice
-> - Bob
-> - Alice//stash
-> - Bob//stash
+<!-- > Note: They above requires `cargo-tarpaulin` is installed to the host, eg. `cargo install cargo-tarpaulin` -->
+<!-- > Development chain means that the state of our chain will be in a tmp folder while the nodes are -->
+<!-- > running. Also, **alice** account will be authority and sudo account as declared in the -->
+<!-- > [genesis state](https://github.com/substrate-developer-hub/substrate-node-template/blob/main/node/src/chain_spec.rs#L49). -->
+<!-- > At the same time the following accounts will be pre-funded: -->
+<!-- > - Alice -->
+<!-- > - Bob -->
+<!-- > - Alice//stash -->
+<!-- > - Bob//stash -->
 
 If we want to maintain the chain state between runs, a base path must be added
 so the db can be stored in the provided folder instead of a temporal one. We could use this folder

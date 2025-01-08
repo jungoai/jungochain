@@ -11,7 +11,7 @@ env:
 jobs:
   check-spec-version:
     name: Check spec_version bump
-    runs-on: SubtensorCI
+    runs-on: JungochainCI
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'no-spec-version-bump') }}
     steps:
       - name: Dependencies
@@ -31,7 +31,7 @@ jobs:
           spec_version=$(PATH=$PATH:$HOME/.cargo/.bin substrate-spec-version wss://dev.chain.opentensor.ai:443 | tr -d '\n')
           echo "network spec_version: $spec_version"
           : ${spec_version:?bad spec version}
-          local_spec_version=$(cargo run -p node-subtensor-runtime --bin spec_version | tr -d '\n')
+          local_spec_version=$(cargo run -p jungochain-runtime --bin spec_version | tr -d '\n')
           echo "local spec_version: $local_spec_version"
           echo "network spec_version: $spec_version"
           if (( $(echo "$local_spec_version <= $spec_version" | bc -l) )); then echo "$local_spec_version ≯ $spec_version ❌"; exit 1; fi

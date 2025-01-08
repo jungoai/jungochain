@@ -3,14 +3,20 @@
 
 use super::*;
 
+const JUNGO: u128 = 1_000_000_000;
+const EXPERT_SENATE_COLD1: &str = "5CPJGQVZr44ejcSALUJ7D96wQev4wawVJR65Di2rwXiwihPt";
+const EXPERT_SENATE_COLD2: &str = "5EaEWaRyrockHfMVQofdTfZSn3qGj9rHdd1ZYxy42kuH397W";
+const EXPERT_SENATE_COLD3: &str = "5G9ApVQgUJB97Z5D16EzfwewaYZ3v7sAGHuP7qbaWubpsZR7";
+const EXPERT_SENATE_HOT1: &str = "5CQ1DRkQyHzEL3DW1EnSwWQnCi9CAGH5XBLtn4AEMbRWZ4T8";
+const EXPERT_SENATE_HOT2: &str = "5GEjzN1P1uPH1zqR2n8ppZ96vMcaSZ6Geaz1pyL2mYPHRqbZ";
+const EXPERT_SENATE_HOT3: &str = "5FUEpp4JZKWBZ4kHBn4e1VucKsQz665benM5wUtAoFN9J91p";
+const FAUCET: &str = "5DcdQh3fPix14t6GdNQgv6ECD5EbSj8Z5dpu8EboKvF8AkKy";
+const SUDO: &str = "5DVGrQ3aEA6rcRGFuwDJSrD1vbPt5K588KnLTsCM6sMGSFhF";
+
+#[rustfmt::skip]
 pub fn devnet_config() -> Result<ChainSpec, String> {
     let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
-
-    // Give front-ends necessary data to present to users
-    let mut properties = sc_service::Properties::new();
-    properties.insert("tokenSymbol".into(), "testTAO".into());
-    properties.insert("tokenDecimals".into(), 9.into());
-    properties.insert("ss58Format".into(), 42.into());
+    let account = |x| Ss58Codec::from_ss58check(x).unwrap();
 
     Ok(ChainSpec::builder(
         wasm_binary,
@@ -19,79 +25,99 @@ pub fn devnet_config() -> Result<ChainSpec, String> {
             ..Default::default()
         },
     )
-    .with_name("Bittensor")
-    .with_protocol_id("bittensor")
-    .with_id("bittensor")
-    .with_chain_type(ChainType::Development)
+    .with_name          ("JungoAI")
+    .with_protocol_id   ("jungo-ai")
+    .with_id            ("jungo-ai")
+    .with_chain_type    (ChainType::Development)
+    // Give front-ends necessary data to present to users
+    .with_properties({
+        let mut properties = sc_service::Properties::new();
+        properties.insert("tokenSymbol".into()  , "testJUNGO".into());
+        properties.insert("tokenDecimals".into(), 9.into());
+        properties.insert("ss58Format".into()   , 42.into());
+        properties
+    })
     .with_genesis_config_patch(devnet_genesis(
+        // Sudo account
+        account(SUDO),
         // Initial PoA authorities (Validators)
         // aura | grandpa
         vec![
-            // Keys for debug
-            authority_keys_from_ss58(
-                "5D5ABUyMsdmJdH7xrsz9vREq5eGXr5pXhHxix2dENQR62dEo",
-                "5H3qMjQjoeZxZ98jzDmoCwbz2sugd5fDN1wrr8Phf49zemKL",
+            authority_keys_from_ss58( // node01
+                "5HpYhZmtNZqrxeDhFW2x2CHYmesE99TfcKiquVgMnAKF6SrX", // aura
+                "5EGiscqsnQUvMoHUKH5M73CumaCrihXYYzaNVfcUF8eDwdgA", // grandpa
             ),
-            authority_keys_from_ss58(
-                "5GbRc5sNDdhcPAU9suV2g9P5zyK1hjAQ9JHeeadY1mb8kXoM",
-                "5GbkysfaCjK3cprKPhi3CUwaB5xWpBwcfrkzs6FmqHxej8HZ",
+            authority_keys_from_ss58( // node02
+                "5FBq8Y7j9Y8hGK47j39W64be5goTfUF9oEg9iB63NwF57mNn",
+                "5GyqaEaBFWjyRF4kZvrXX4b1VZjqb7YWexKmbU5cTTnVrP2w",
             ),
-            authority_keys_from_ss58(
-                "5CoVWwBwXz2ndEChGcS46VfSTb3RMUZzZzAYdBKo263zDhEz",
-                "5HTLp4BvPp99iXtd8YTBZA1sMfzo8pd4mZzBJf7HYdCn2boU",
+            authority_keys_from_ss58( // node03
+                "5ELVnCbqXZ3QpaNjE71sGv3qN1s3zSLCC363f7qkHxnXu22W",
+                "5HWuVHfJP1VjH8mJEK8VQhFmFmdtJqpgYW3V2Ae9WRRaUZAs",
             ),
-            authority_keys_from_ss58(
-                "5EekcbqupwbgWqF8hWGY4Pczsxp9sbarjDehqk7bdyLhDCwC",
-                "5GAemcU4Pzyfe8DwLwDFx3aWzyg3FuqYUCCw2h4sdDZhyFvE",
+            authority_keys_from_ss58( // node04
+                "5CUauLtuzEXZYkBEPcNAwFeUjk8c98B43SMy4nQj8N5uJM1m",
+                "5G5p7xKTvLc1ZPQQuYB7WbaXUcVmMysPsURp9Pny8QodoVWH",
             ),
-            authority_keys_from_ss58(
-                "5GgdEQyS5DZzUwKuyucEPEZLxFKGmasUFm1mqM3sx1MRC5RV",
-                "5EibpMomXmgekxcfs25SzFBpGWUsG9Lc8ALNjXN3TYH5Tube",
-            ),
-            authority_keys_from_ss58(
-                "5Ek5JLCGk2PuoT1fS23GXiWYUT98HVUBERFQBu5g57sNf44x",
-                "5Gyrc6b2mx1Af6zWJYHdx3gwgtXgZvD9YkcG9uTUPYry4V2a",
+            authority_keys_from_ss58( // node05
+                "5Gq8MizVyfh2Wg7erRky5KdFYeTEuKes5o9WJfZogXTe6UPn",
+                "5CxqoXZya9U5wNPuPKDbA6jYRFThAF8on5fjee734ApgBCHg",
             ),
         ],
-        // Sudo account
-        Ss58Codec::from_ss58check("5GpzQgpiAKHMWNSH3RN4GLf96GVTDct9QxYEFAY7LWcVzTbx").unwrap(),
-        // Pre-funded accounts
+        // balances
+        vec![
+            // Expert senate cold keys
+            (account(EXPERT_SENATE_COLD1), 103 * JUNGO),
+            (account(EXPERT_SENATE_COLD2), 103 * JUNGO),
+            (account(EXPERT_SENATE_COLD3), 103 * JUNGO),
+            // Faucet
+            (account(FAUCET), 5_000_000 * JUNGO),
+        ],
+        // trimvirates
         vec![],
-        true,
-        vec![],
+        // expert_senate
+        vec![
+            AccountId32::from_str(EXPERT_SENATE_HOT1).unwrap(),
+            AccountId32::from_str(EXPERT_SENATE_HOT2).unwrap(),
+            AccountId32::from_str(EXPERT_SENATE_HOT3).unwrap(),
+        ],
         vec![],
         0,
     ))
-    .with_properties(properties)
     .build())
 }
 
-// Configure initial storage state for FRAME modules.
 #[allow(clippy::too_many_arguments)]
 fn devnet_genesis(
-    initial_authorities: Vec<(AuraId, GrandpaId)>,
-    root_key: AccountId,
-    _endowed_accounts: Vec<AccountId>,
-    _enable_println: bool,
+    sudo_key: AccountId,
+    authorities: Vec<(AuraId, GrandpaId)>,
+    balances: Vec<(AccountId, u128)>,
+    trimvirates: Vec<AccountId>,
+    expert_senate: Vec<AccountId>,
     _stakes: Vec<(AccountId, Vec<(AccountId, (u64, u16))>)>,
-    _balances: Vec<(AccountId, u64)>,
     _balances_issuance: u64,
 ) -> serde_json::Value {
+    let (auras, grandpas): (Vec<AuraId>, Vec<GrandpaId>) = authorities.into_iter().unzip();
+
     serde_json::json!({
         "balances": {
-            "balances": vec![(root_key.clone(), 1_000_000_000_000u128)],
+            "balances": balances,
         },
         "aura": {
-            "authorities": initial_authorities.iter().map(|x| (x.0.clone())).collect::<Vec<_>>(),
+            "authorities": auras,
         },
         "grandpa": {
-            "authorities": initial_authorities
-                .iter()
-                .map(|x| (x.1.clone(), 1))
-                .collect::<Vec<_>>(),
+            "authorities": grandpas.into_iter().map(|x| (x, 1)).collect::<Vec<_>>()
         },
         "sudo": {
-            "key": Some(root_key),
+            "key": Some(sudo_key),
         },
+        "triumvirateMembers": {
+            "members": trimvirates
+        },
+        "expertSenate": {
+            "members": expert_senate
+        },
+        "evmChainId": { "chainId": 4222 },
     })
 }

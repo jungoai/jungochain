@@ -20,7 +20,7 @@ env:
 
 jobs:
   update-chainspecs:
-    runs-on: SubtensorCI
+    runs-on: JungochainCI
     permissions:
       contents: write
     if: >

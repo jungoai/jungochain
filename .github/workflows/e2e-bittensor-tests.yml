@@ -24,7 +24,7 @@ env:
 
 jobs:
   run:
-    runs-on: SubtensorCI
+    runs-on: JungochainCI
     strategy:
       matrix:
         rust-branch:
