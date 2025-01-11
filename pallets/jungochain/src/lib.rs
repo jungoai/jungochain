@@ -446,9 +446,6 @@ pub mod pallet {
     #[pallet::type_value]
     /// Default value for network rate limit.
     pub fn DefaultNetworkRateLimit<T: Config>() -> u64 {
-        if cfg!(feature = "pow-faucet") {
-            return 0;
-        }
         T::InitialNetworkRateLimit::get()
     }
     #[pallet::type_value]
