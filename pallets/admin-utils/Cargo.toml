@@ -29,6 +29,7 @@ log = { workspace = true }
 pallet-jungochain = { version = "0.1.0-dev", default-features = false, path = "../jungochain" }
 sp-weights = { workspace = true }
 substrate-fixed = { workspace = true }
+pallet-grandpa = { workspace = true }
 
 
 [dev-dependencies]
@@ -60,6 +61,7 @@ std = [
 	"sp-io/std",
 	"sp-std/std",
 	"substrate-fixed/std",
+	"pallet-grandpa/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking/runtime-benchmarks",
@@ -69,6 +71,7 @@ runtime-benchmarks = [
 	"sp-runtime/runtime-benchmarks",
 	"pallet-jungochain/runtime-benchmarks",
 	"pallet-scheduler/runtime-benchmarks",
+	"pallet-grandpa/runtime-benchmarks",
 ]
 try-runtime = [
 	"frame-support/try-runtime",
@@ -76,5 +79,6 @@ try-runtime = [
 	"pallet-balances/try-runtime",
 	"pallet-scheduler/try-runtime",
 	"sp-runtime/try-runtime",
-	"pallet-jungochain/try-runtime"
+	"pallet-jungochain/try-runtime",
+	"pallet-grandpa/try-runtime",
 ]

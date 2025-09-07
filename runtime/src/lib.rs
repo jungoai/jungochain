@@ -3,60 +3,21 @@
 #![recursion_limit = "256"]
 // Some arithmetic operations can't use the saturating equivalent, such as the PerThing types
 #![allow(clippy::arithmetic_side_effects)]
-
 // Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 pub mod check_nonce;
 mod migrations;
+mod precompiles;
 
 use codec::{Decode, Encode, MaxEncodedLen};
-use frame_support::traits::Imbalance;
-use frame_support::{
-    dispatch::DispatchResultWithPostInfo,
-    genesis_builder_helper::{build_state, get_preset},
-    pallet_prelude::Get,
-    traits::{
-        fungible::{
-            DecreaseIssuance, HoldConsideration, Imbalance as FungibleImbalance, IncreaseIssuance,
-        },
-        Contains, LinearStoragePrice, OnUnbalanced,
-    },
-};
-use frame_system::{EnsureNever, EnsureRoot, EnsureRootWithSuccess, RawOrigin};
-use pallet_commitments::CanCommit;
-use pallet_grandpa::{
-    fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
-};
-use pallet_jungochain::{CollectiveInterface, MemberManagement};
-use pallet_registry::CanRegisterIdentity;
-use scale_info::TypeInfo;
-use smallvec::smallvec;
-use sp_api::impl_runtime_apis;
-use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{
-    crypto::{ByteArray, KeyTypeId},
-    OpaqueMetadata, H160, H256, U256,
-};
-use sp_runtime::{
-    create_runtime_str, generic, impl_opaque_keys,
-    traits::{
-        AccountIdLookup, BlakeTwo256, Block as BlockT, DispatchInfoOf, Dispatchable,
-        IdentifyAccount, NumberFor, One, PostDispatchInfoOf, UniqueSaturatedInto, Verify,
-    },
-    transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
-    AccountId32, ApplyExtrinsicResult, ConsensusEngineId, MultiSignature,
-};
-use sp_std::cmp::Ordering;
-use sp_std::prelude::*;
-#[cfg(feature = "std")]
-use sp_version::NativeVersion;
-use sp_version::RuntimeVersion;
-
-// A few exports that help ease life for downstream crates.
+use core::marker::PhantomData;
+use fp_rpc::TransactionStatus;
 pub use frame_support::{
-    construct_runtime, parameter_types,
+    // A few exports that help ease life for downstream crates.
+    construct_runtime,
+    parameter_types,
     traits::{
         ConstBool, ConstU128, ConstU16, ConstU32, ConstU64, ConstU8, FindAuthor, InstanceFilter,
         KeyOwnerProofSystem, OnFinalize, OnTimestampSet, PrivilegeCmp, Randomness, StorageInfo,
@@ -70,30 +31,67 @@ pub use frame_support::{
     },
     StorageValue,
 };
+use frame_support::{dispatch::DispatchResult, traits::Imbalance};
+use frame_support::{
+    dispatch::DispatchResultWithPostInfo,
+    genesis_builder_helper::{build_state, get_preset},
+    pallet_prelude::Get,
+    traits::{
+        fungible::{
+            DecreaseIssuance, HoldConsideration, Imbalance as FungibleImbalance, IncreaseIssuance,
+        },
+        Contains, LinearStoragePrice, OnUnbalanced, ValidatorSet,
+    },
+};
 pub use frame_system::Call as SystemCall;
+use frame_system::{
+    pallet_prelude::BlockNumberFor, EnsureNever, EnsureRoot, EnsureRootWithSuccess, RawOrigin,
+};
 pub use pallet_balances::Call as BalancesCall;
-pub use pallet_timestamp::Call as TimestampCall;
-use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter, Multiplier};
-#[cfg(any(feature = "std", test))]
-pub use sp_runtime::BuildStorage;
-pub use sp_runtime::{Perbill, Permill};
-
-use core::marker::PhantomData;
-
-mod precompiles;
-use precompiles::FrontierPrecompiles;
-
-// Frontier
-use fp_rpc::TransactionStatus;
+use pallet_commitments::CanCommit;
 use pallet_ethereum::{Call::transact, PostLogContent, Transaction as EthereumTransaction};
 use pallet_evm::{Account as EVMAccount, BalanceConverter, FeeCalculator, Runner};
+use pallet_grandpa::{
+    fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
+};
+pub use pallet_jungochain;
+use pallet_jungochain::{CollectiveInterface, MemberManagement};
+use pallet_registry::CanRegisterIdentity;
+pub use pallet_scheduler;
+pub use pallet_timestamp::Call as TimestampCall;
+use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter, Multiplier};
+use precompiles::FrontierPrecompiles;
+use scale_info::TypeInfo;
+use smallvec::smallvec;
+use sp_api::impl_runtime_apis;
+use sp_consensus_aura::sr25519::AuthorityId as AuraId;
+use sp_core::{
+    crypto::{ByteArray, KeyTypeId},
+    OpaqueMetadata, H160, H256, U256,
+};
+pub use sp_runtime::{Perbill, Permill};
+use sp_std::cmp::Ordering;
+use sp_std::prelude::*;
+use sp_version::RuntimeVersion;
+
+#[cfg(any(feature = "std", test))]
+pub use sp_runtime::BuildStorage;
+use sp_runtime::{
+    create_runtime_str, generic, impl_opaque_keys,
+    traits::{
+        AccountIdLookup, BlakeTwo256, Block as BlockT, DispatchInfoOf, Dispatchable,
+        IdentifyAccount, IdentityLookup, NumberFor, One, OpaqueKeys, PostDispatchInfoOf,
+        UniqueSaturatedInto, Verify,
+    },
+    transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
+    AccountId32, ApplyExtrinsicResult, ConsensusEngineId, MultiSignature,
+};
+
+#[cfg(feature = "std")]
+use sp_version::NativeVersion;
 
 // ----------------------------------------------------------------------------
 // -- Types
-
-// Jungochain module
-pub use pallet_jungochain;
-pub use pallet_scheduler;
 
 // An index to a block.
 pub type BlockNumber = u32;
@@ -171,7 +169,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     //   `spec_version`, and `authoring_version` are the same between Wasm and native.
     // This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
     //   the compatible custom types.
-    spec_version: 100,
+    spec_version: 101,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -1064,21 +1062,32 @@ impl CollectiveInterface<AccountId, Hash, u32> for TriumvirateVotes {
 
 use sp_runtime::BoundedVec;
 
-pub struct AuraPalletIntrf;
-impl pallet_admin_utils::AuraInterface<AuraId, ConstU32<32>> for AuraPalletIntrf {
+pub struct AuraPalletI;
+impl pallet_admin_utils::AuraInterface<AuraId, ConstU32<32>> for AuraPalletI {
     fn change_authorities(new: BoundedVec<AuraId, ConstU32<32>>) {
         Aura::change_authorities(new);
     }
 }
 
+pub struct GrandpaPalletI;
+impl pallet_admin_utils::GrandpaInterface<Runtime> for GrandpaPalletI {
+    fn schedule_change(
+        next_authorities: GrandpaAuthorityList,
+        in_blocks: BlockNumber,
+    ) -> DispatchResult {
+        Grandpa::schedule_change(next_authorities, in_blocks, None)
+    }
+}
+
 #[rustfmt::skip]
 impl pallet_admin_utils::Config for Runtime {
-    type RuntimeEvent 	= RuntimeEvent;
-    type AuthorityId 	= AuraId;
+    type RuntimeEvent   = RuntimeEvent;
+    type AuthorityId    = AuraId;
     type MaxAuthorities = ConstU32<32>;
-    type Aura 			= AuraPalletIntrf;
-    type Balance 		= Balance;
-    type WeightInfo 	= pallet_admin_utils::weights::SubstrateWeight<Runtime>;
+    type Aura           = AuraPalletI;
+    type Grandpa        = GrandpaPalletI;
+    type Balance        = Balance;
+    type WeightInfo     = pallet_admin_utils::weights::SubstrateWeight<Runtime>;
 }
 
 // Define the ChainId

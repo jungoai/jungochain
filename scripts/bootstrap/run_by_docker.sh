@@ -115,7 +115,6 @@ run_() {
         $telemetry_url_opt                                      \
         --bootnodes             "$boot_nodes"                   \
         --unsafe-force-node-key-generation
-
 }
 
 run() {

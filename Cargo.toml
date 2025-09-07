@@ -1,6 +1,6 @@
 [package]
 name        = "jungochain"
-version     = "0.1.0"
+version     = "0.1.1"
 description = "Implementation of the jungoai blockchain"
 authors     = ["Substrate DevHub <https://github.com/substrate-developer-hub>"] # TODO
 homepage    = "https://jungoai.xyz/"
@@ -11,7 +11,7 @@ repository  = "https://github.com/" # TODO
 
 [dependencies]
 jungochain-node    = { path = "node",    version = "0.1.0-dev" }
-jungochain-runtime = { path = "runtime", version = "0.1.0-dev" }
+jungochain-runtime = { path = "runtime", version = "0.1.1-dev" }
 
 [build-dependencies]
 subtensor-linting       = { path = "support/linting", version = "0.1.0" }
@@ -193,7 +193,7 @@ pallet-hotfix-sufficients = { git = "https://github.com/gztensor/frontier", rev 
 frame-metadata = "16"
 
 [profile.release]
-panic = "unwind"
+panic = "abort"
 
 [profile.test]
 opt-level = 3

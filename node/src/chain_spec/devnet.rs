@@ -51,18 +51,18 @@ pub fn devnet_config() -> Result<ChainSpec, String> {
                 "5FBq8Y7j9Y8hGK47j39W64be5goTfUF9oEg9iB63NwF57mNn",
                 "5GyqaEaBFWjyRF4kZvrXX4b1VZjqb7YWexKmbU5cTTnVrP2w",
             ),
-            authority_keys_from_ss58( // node03
-                "5ELVnCbqXZ3QpaNjE71sGv3qN1s3zSLCC363f7qkHxnXu22W",
-                "5HWuVHfJP1VjH8mJEK8VQhFmFmdtJqpgYW3V2Ae9WRRaUZAs",
-            ),
-            authority_keys_from_ss58( // node04
-                "5CUauLtuzEXZYkBEPcNAwFeUjk8c98B43SMy4nQj8N5uJM1m",
-                "5G5p7xKTvLc1ZPQQuYB7WbaXUcVmMysPsURp9Pny8QodoVWH",
-            ),
-            authority_keys_from_ss58( // node05
-                "5Gq8MizVyfh2Wg7erRky5KdFYeTEuKes5o9WJfZogXTe6UPn",
-                "5CxqoXZya9U5wNPuPKDbA6jYRFThAF8on5fjee734ApgBCHg",
-            ),
+            // authority_keys_from_ss58( // node03
+            //     "5ELVnCbqXZ3QpaNjE71sGv3qN1s3zSLCC363f7qkHxnXu22W",
+            //     "5HWuVHfJP1VjH8mJEK8VQhFmFmdtJqpgYW3V2Ae9WRRaUZAs",
+            // ),
+            // authority_keys_from_ss58( // node04
+            //     "5CUauLtuzEXZYkBEPcNAwFeUjk8c98B43SMy4nQj8N5uJM1m",
+            //     "5G5p7xKTvLc1ZPQQuYB7WbaXUcVmMysPsURp9Pny8QodoVWH",
+            // ),
+            // authority_keys_from_ss58( // node05
+            //     "5Gq8MizVyfh2Wg7erRky5KdFYeTEuKes5o9WJfZogXTe6UPn",
+            //     "5CxqoXZya9U5wNPuPKDbA6jYRFThAF8on5fjee734ApgBCHg",
+            // ),
         ],
         // balances
         vec![

@@ -2,8 +2,10 @@
 
 pub use pallet::*;
 pub mod weights;
+use pallet_grandpa::AuthorityList as GrandpaAuthorityList;
 pub use weights::WeightInfo;
 
+use frame_support::dispatch::DispatchResult;
 use frame_system::pallet_prelude::BlockNumberFor;
 use sp_runtime::{traits::Member, RuntimeAppPublic};
 
@@ -13,7 +15,6 @@ mod benchmarking;
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use frame_support::dispatch::DispatchResult;
     use frame_support::pallet_prelude::*;
     use frame_support::traits::tokens::Balance;
     use frame_system::pallet_prelude::*;
@@ -32,6 +33,9 @@ pub mod pallet {
 
         /// Implementation of the AuraInterface
         type Aura: crate::AuraInterface<Self::AuthorityId, Self::MaxAuthorities>;
+
+        /// Implementation of the GrandpaInterface
+        type Grandpa: crate::GrandpaInterface<Self>;
 
         /// The identifier type for an authority.
         type AuthorityId: Member
@@ -72,7 +76,7 @@ pub mod pallet {
         /// The extrinsic will call the Aura pallet to change the authorities.
         #[pallet::call_index(0)]
         #[pallet::weight(T::WeightInfo::swap_authorities(new_authorities.len() as u32))]
-        pub fn swap_authorities(
+        pub fn swap_aura_authorities(
             origin: OriginFor<T>,
             new_authorities: BoundedVec<T::AuthorityId, T::MaxAuthorities>,
         ) -> DispatchResult {
@@ -84,6 +88,24 @@ pub mod pallet {
 
             // Return a successful DispatchResultWithPostInfo
             Ok(())
+        }
+
+        /// The extrinsic sets the new authorities for Grandpa consensus.
+        /// It is only callable by the root account.
+        /// The extrinsic will call the Grandpa pallet to change the authorities.
+        #[pallet::call_index(58)]
+        #[pallet::weight(T::WeightInfo::swap_authorities(new_authorities.len() as u32))]
+        pub fn swap_grandpa_authorities(
+            origin: OriginFor<T>,
+            new_authorities: GrandpaAuthorityList, // it's: Vec<(Public, u64)>
+        ) -> DispatchResult {
+            ensure_root(origin)?;
+
+            let res = T::Grandpa::schedule_change(new_authorities.clone(), 10u32.into());
+
+            log::debug!("Grandpa authorities changed: {:?}", new_authorities);
+
+            res
         }
 
         /// The extrinsic sets the default take for the network.
@@ -1225,4 +1247,17 @@ pub trait AuraInterface<AuthorityId, MaxAuthorities> {
 
 impl<A, M> AuraInterface<A, M> for () {
     fn change_authorities(_: BoundedVec<A, M>) {}
+}
+
+pub trait GrandpaInterface<T: Config> {
+    fn schedule_change(
+        next_authorities: GrandpaAuthorityList,
+        in_blocks: BlockNumberFor<T>,
+    ) -> DispatchResult;
+}
+
+impl<T: Config> GrandpaInterface<T> for () {
+    fn schedule_change(_: GrandpaAuthorityList, _in_block: BlockNumberFor<T>) -> DispatchResult {
+        Ok(())
+    }
 }
